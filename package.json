@@ -1,0 +1,24 @@
+{
+    "name": "crosschain-ops",
+    "private": true,
+    "packageManager": "pnpm@9.7.0",
+    "workspaces": [
+      "apps/*",
+      "packages/*"
+    ],
+    "scripts": {
+      "dev:api": "pnpm -F apps/api dev",
+      "dev:worker": "pnpm -F apps/worker dev",
+      "dev:web": "pnpm -F apps/web dev",
+  
+      "build": "pnpm -r --filter ./apps... --filter ./packages... build",
+      "lint": "pnpm -r lint",
+  
+      "migrate": "pnpm -F prisma migrate",
+      "seed": "pnpm -F prisma seed",
+  
+      "compose:up": "docker compose up -d",
+      "compose:down": "docker compose down -v"
+    }
+  }
+  
