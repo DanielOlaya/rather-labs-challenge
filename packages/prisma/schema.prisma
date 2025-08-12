@@ -1,0 +1,206 @@
+
+generator client {
+  provider = "prisma-client-js"
+  output   = "./generated/client"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// Enums
+enum ChainStatus {
+  active
+  degraded
+  offline
+}
+
+enum ContractType {
+  Controller
+  Router
+}
+
+enum TransactionStatus {
+  pending
+  confirmed
+  orphaned
+}
+
+enum BufferStatus {
+  immediate
+  buffered
+  expired
+}
+
+enum MessageStatus {
+  sent
+  delivered
+  timeout
+  unknown
+}
+
+enum OperationType {
+  AddCollateral
+  Borrow
+  Withdraw
+}
+
+enum OperationStatus {
+  ongoing
+  completed
+  rejected
+  stuck
+  orphaned
+  timeout
+}
+
+// Tables
+model Chain {
+  chain_id             Int                   @id
+  name                 String
+  status               ChainStatus
+  last_block_processed BigInt
+  provider_urls        Json // Array of RPC URLs
+
+  // Relations
+  contracts     Contract[]
+  transactions  Transaction[]
+  events        Event[]
+  messages_from Message[] @relation("MessageFromChain")
+  messages_to   Message[] @relation("MessageToChain")
+  operations_from Operation[] @relation("OperationFromChain")
+  operations_to   Operation[] @relation("OperationToChain")
+
+  @@map("chains")
+}
+
+model Contract {
+  address          String      @id
+  chain_id         Int
+  type             ContractType
+  deployment_block BigInt
+  abi_hash         String
+
+  // Relations
+  chain Chain @relation(fields: [chain_id], references: [chain_id])
+
+  @@index([chain_id])
+  @@map("contracts")
+}
+
+model Transaction {
+  tx_id         String            @id @default(uuid()) @db.Uuid
+  chain_id      Int
+  hash          String            @unique
+  block_number  BigInt
+  block_hash    String
+  timestamp     DateTime
+  status        TransactionStatus
+  confirmations Int
+
+  // Relations
+  chain          Chain       @relation(fields: [chain_id], references: [chain_id])
+  events         Event[]
+  messages_sent  Message[]   @relation("MessageSentTransaction")
+  messages_recv  Message[]   @relation("MessageRecvTransaction")
+  operations_start Operation[] @relation("Operationstart_transaction")
+  operations_end   Operation[] @relation("OperationEndTransaction")
+
+  @@index([chain_id])
+  @@index([block_number])
+  @@index([timestamp])
+  @@map("transactions")
+}
+
+model Event {
+  event_id              String        @id @default(uuid()) @db.Uuid
+  chain_id              Int
+  tx_hash               String
+  log_index             Int
+  name                  String
+  contract_address      String
+  params                Json
+  correlation_window_id String?       @db.Uuid
+  buffer_status         BufferStatus
+
+  // Relations
+  chain       Chain       @relation(fields: [chain_id], references: [chain_id])
+  transaction Transaction @relation(fields: [tx_hash], references: [hash])
+
+  @@unique([chain_id, tx_hash, log_index])
+  @@index([chain_id])
+  @@index([tx_hash])
+  @@index([contract_address])
+  @@index([name])
+  @@index([correlation_window_id])
+  @@index([buffer_status])
+  @@map("events")
+}
+
+model Message {
+  message_id   String        @id @default(uuid()) @db.Uuid
+  nonce        Decimal
+  from_chain   Int
+  to_chain     Int
+  sent_tx_id   String        @db.Uuid
+  recv_tx_id   String?       @db.Uuid
+  status       MessageStatus
+  sent_at      DateTime
+  received_at  DateTime?
+
+  // Relations
+  from_chain_rel     Chain        @relation("MessageFromChain", fields: [from_chain], references: [chain_id])
+  to_chain_rel       Chain        @relation("MessageToChain", fields: [to_chain], references: [chain_id])
+  sent_transaction   Transaction  @relation("MessageSentTransaction", fields: [sent_tx_id], references: [tx_id])
+  recv_transaction   Transaction? @relation("MessageRecvTransaction", fields: [recv_tx_id], references: [tx_id])
+  operations         Operation[]
+
+  @@index([nonce])
+  @@index([from_chain])
+  @@index([to_chain])
+  @@index([status])
+  @@index([sent_at])
+  @@map("messages")
+}
+
+model Operation {
+  op_id          String          @id @default(uuid()) @db.Uuid
+  op_type        OperationType
+  user_address   String
+  from_chain     Int
+  to_chain       Int
+  message_nonce  Decimal?
+  message_id     String?         @db.Uuid
+  start_tx_id    String          @db.Uuid
+  end_tx_id      String?         @db.Uuid
+  status         OperationStatus
+  substatus      String?
+  details        Json
+  retry_count    Int
+  created_at     DateTime        @default(now())
+  updated_at     DateTime        @updatedAt
+  last_event_at  DateTime
+  next_retry_at  DateTime?
+  error_context  Json?
+
+  // Relations
+  from_chain_rel     Chain        @relation("OperationFromChain", fields: [from_chain], references: [chain_id])
+  to_chain_rel       Chain        @relation("OperationToChain", fields: [to_chain], references: [chain_id])
+  message            Message?     @relation(fields: [message_id], references: [message_id])
+  start_transaction  Transaction  @relation("Operationstart_transaction", fields: [start_tx_id], references: [tx_id])
+  end_transaction    Transaction? @relation("OperationEndTransaction", fields: [end_tx_id], references: [tx_id])
+
+  @@index([op_type])
+  @@index([user_address])
+  @@index([from_chain])
+  @@index([to_chain])
+  @@index([status])
+  @@index([substatus])
+  @@index([created_at])
+  @@index([updated_at])
+  @@index([last_event_at])
+  @@index([next_retry_at])
+  @@index([message_nonce])
+  @@map("operations")
+}
