@@ -97,6 +97,7 @@ export class QueueService {
     ];
 
     const health = {};
+    
     for (const { name, queue } of queues) {
       try {
         const [waiting, active, completed, failed] = await Promise.all([
@@ -113,9 +114,6 @@ export class QueueService {
           failed: failed.length,
           isHealthy: true,
         };
-        if (name === 'event:raw') {
-          this.logger.debug(`Waiting event data: ${{ waitingEvent: JSON.stringify(waiting[1].data) }}`);
-        }
       } catch (error) {
         health[name] = {
           isHealthy: false,

@@ -1,0 +1,35 @@
+{
+  "1": {
+    "name": "Ethereum",
+    "finality_depth": 12,
+    "sla_threshold_minutes": 30,
+    "rpcUrls": [
+      "wss://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY",
+      "https://eth-mainnet.g.alchemy.com/v2/YOUR_API_KEY",
+      "https://ethereum.publicnode.com",
+      "wss://ethereum.publicnode.com"
+    ]
+  },
+  "137": {
+    "name": "Polygon",
+    "finality_depth": 64,
+    "sla_threshold_minutes": 15,
+    "rpcUrls": [
+      "wss://polygon-mainnet.g.alchemy.com/v2/YOUR_API_KEY",
+      "https://polygon-mainnet.g.alchemy.com/v2/YOUR_API_KEY",
+      "https://polygon.publicnode.com",
+      "wss://polygon.publicnode.com"
+    ]
+  },
+  "11155111": {
+    "name": "Sepolia",
+    "finality_depth": 12,
+    "sla_threshold_minutes": 30,
+    "rpcUrls": [
+      "https://ethereum-sepolia-rpc.publicnode.com",
+      "wss://sepolia.gateway.tenderly.co",
+      "wss://ethereum-sepolia-rpc.publicnode.com",
+      "https://sepolia.infura.io"
+    ]
+  }
+}

@@ -10,7 +10,6 @@ export class HealthController {
 
   @Get()
   async getOverallHealth() {
-    console.log('health cont')
     return this.healthService.getOverallHealth();
   }
 

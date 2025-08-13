@@ -20,7 +20,6 @@ export class HealthService {
     //   message: 'Basic health check - full monitoring temporarily disabled',
     // };
     try {
-      console.log('health serv')
       const [database, chains, queues] = await Promise.all([
         this.getDatabaseHealth(),
         this.getChainsHealth(),

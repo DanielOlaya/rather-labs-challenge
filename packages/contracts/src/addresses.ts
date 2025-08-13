@@ -35,6 +35,22 @@ export const CHAIN_CONFIGS: Record<number, ChainConfig> = {
       controller: '0x3456789012345678901234567890123456789012', // TODO: Replace with actual address
       router: '0x4567890123456789012345678901234567890123' // TODO: Replace with actual address
     }
+  },
+  
+  // Sepolia
+  11155111: {
+    chainId: 11155111,
+    name: 'Sepolia',
+    rpcUrls: [
+      'https://sepolia.infura.io',
+      "wss://sepolia.gateway.tenderly.co",
+      "wss://ethereum-sepolia-rpc.publicnode.com",
+      "https://ethereum-sepolia-rpc.publicnode.com"
+    ],
+    contracts: {
+      controller: '0xBF69aDA28ed7598dF669DFc0962d0065464Cc311',
+      router: '0xfF23C2C86820705b32245AD3a23BA37127978651'
+    }
   }
 };
 
