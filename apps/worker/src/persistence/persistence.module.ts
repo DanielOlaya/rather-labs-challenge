@@ -6,6 +6,7 @@ import { TransactionRepository } from './repositories/transaction.repository';
 import { EventRepository } from './repositories/event.repository';
 import { MessageRepository } from './repositories/message.repository';
 import { OperationRepository } from './repositories/operation.repository';
+import { StorageService } from './storage.service';
 
 @Module({
   providers: [
@@ -16,6 +17,7 @@ import { OperationRepository } from './repositories/operation.repository';
     EventRepository,
     MessageRepository,
     OperationRepository,
+    StorageService,
   ],
   exports: [
     PrismaService,
@@ -25,6 +27,7 @@ import { OperationRepository } from './repositories/operation.repository';
     EventRepository,
     MessageRepository,
     OperationRepository,
+    StorageService,
   ],
 })
 export class PersistenceModule {}

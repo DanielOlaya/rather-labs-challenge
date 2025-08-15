@@ -3,28 +3,13 @@ import { BullModule } from '@nestjs/bullmq';
 import { ConfigService } from '../config/config.service';
 import { QueueService } from './queue.service';
 import { QUEUES } from './queue.constants';
+import { PersistenceModule } from '../persistence/persistence.module';
+import { RawEventProcessor, BufferEventProcessor, LinkEventProcessor } from './processors/event.processor';
+import { OperationConsolidateProcessor, ReorgRecoveryProcessor } from './processors/operation.processor';
 
 @Module({
   imports: [
-    // BullModule.forRootAsync({
-    //   inject: [ConfigService],
-    //   useFactory: (configService: ConfigService) => ({
-    //     connection: {
-    //       host: new URL(configService.redisUrl).hostname,
-    //       port: parseInt(new URL(configService.redisUrl).port) || 6379,
-    //       password: new URL(configService.redisUrl).password || undefined,
-    //     },
-    //     defaultJobOptions: {
-    //       removeOnComplete: 10,
-    //       removeOnFail: 50,
-    //       attempts: 3,
-    //       backoff: {
-    //         type: 'exponential',
-    //         delay: 2000,
-    //       },
-    //     },
-    //   }),
-    // }),
+    PersistenceModule,
     BullModule.forRootAsync({
       // TODO: Fix config import issue
       // imports: [ConfigService],
@@ -54,7 +39,16 @@ import { QUEUES } from './queue.constants';
       { name: QUEUES.REORG_RECOVERY },
     ),
   ],
-  providers: [QueueService],
-  exports: [QueueService],
+  providers: [
+    QueueService,
+    RawEventProcessor,
+    BufferEventProcessor,
+    LinkEventProcessor,
+    OperationConsolidateProcessor,
+    ReorgRecoveryProcessor,
+  ],
+  exports: [
+    QueueService,
+  ],
 })
 export class QueueModule {}

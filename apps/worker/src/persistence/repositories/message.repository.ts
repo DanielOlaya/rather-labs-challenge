@@ -72,4 +72,59 @@ export class MessageRepository {
       },
     });
   }
+
+  async findUnmatchedSentMessages(chainId: number, cutoffTime: Date): Promise<Message[]> {
+    return this.prisma.message.findMany({
+      where: {
+        from_chain: chainId,
+        status: MessageStatus.sent,
+        sent_at: {
+          gte: cutoffTime,
+        },
+      },
+    });
+  }
+
+  async findRecentReceivedMessages(chainId: number, cutoffTime: Date): Promise<Message[]> {
+    return this.prisma.message.findMany({
+      where: {
+        to_chain: chainId,
+        status: MessageStatus.delivered, // Using correct enum value
+        received_at: {
+          gte: cutoffTime,
+        },
+      },
+    });
+  }
+
+  async findTimedOutMessages(cutoffTime: Date): Promise<Message[]> {
+    return this.prisma.message.findMany({
+      where: {
+        status: MessageStatus.sent,
+        sent_at: {
+          lt: cutoffTime,
+        },
+      },
+    });
+  }
+
+  async updateReceiveTx(messageId: string, receiveTxHash: string): Promise<Message> {
+    return this.prisma.message.update({
+      where: { message_id: messageId },
+      data: { 
+        received_at: new Date(),
+        // Note: You might need to add receive_tx_hash field to schema if needed
+      },
+    });
+  }
+
+  async linkMessages(sentMessageId: string, receivedMessageId: string): Promise<void> {
+    // Update the received message to reference the sent message
+    await this.prisma.message.update({
+      where: { message_id: receivedMessageId },
+      data: {
+        // Note: You might need to add sent_message_id field to schema for linking
+      },
+    });
+  }
 }

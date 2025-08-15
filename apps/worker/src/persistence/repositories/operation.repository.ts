@@ -238,4 +238,17 @@ export class OperationRepository {
       take: limit,
     });
   }
+
+  async findByStartTransactionHash(txHash: string): Promise<{ op_id: string } | null> {
+    return this.prisma.operation.findFirst({
+      where: {
+        start_transaction: {
+          hash: txHash.toLowerCase(),
+        },
+      },
+      select: {
+        op_id: true,
+      },
+    });
+  }
 }

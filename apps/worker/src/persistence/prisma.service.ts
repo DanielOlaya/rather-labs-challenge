@@ -19,9 +19,9 @@ export class PrismaService extends PrismaClient<Prisma.PrismaClientOptions, 'que
 
   async onModuleInit() {
     this.$on('query', (event: Prisma.QueryEvent) => {
-      this.logger.debug(
-        `Query: ${event.query} - Params: ${event.params} - Duration: ${event.duration}ms`,
-      );
+      // this.logger.debug(
+      //   `Query: ${event.query} - Params: ${event.params} - Duration: ${event.duration}ms`,
+      // );
     });
 
     try {

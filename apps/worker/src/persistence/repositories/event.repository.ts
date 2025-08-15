@@ -59,4 +59,11 @@ export class EventRepository {
       data: { buffer_status: bufferStatus },
     });
   }
+
+  async updateOperationId(eventId: string, operationId: string): Promise<Event> {
+    return this.prisma.event.update({
+      where: { event_id: eventId },
+      data: { operation_id: operationId },
+    });
+  }
 }

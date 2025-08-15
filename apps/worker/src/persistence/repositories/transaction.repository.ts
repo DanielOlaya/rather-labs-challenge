@@ -53,4 +53,42 @@ export class TransactionRepository {
       data: updateData,
     });
   }
+
+  async findPendingConfirmations(cutoffTime: Date): Promise<Transaction[]> {
+    return this.prisma.transaction.findMany({
+      where: {
+        status: {
+          in: [TransactionStatus.pending, TransactionStatus.confirmed],
+        },
+        timestamp: {
+          gte: cutoffTime,
+        },
+      },
+      orderBy: {
+        timestamp: 'desc',
+      },
+    });
+  }
+
+  async findByTxId(txId: string): Promise<Transaction | null> {
+    return this.prisma.transaction.findUnique({
+      where: { tx_id: txId },
+    });
+  }
+
+  async findRecentTransactions(chainId: number, minutes: number = 60): Promise<Transaction[]> {
+    const cutoffTime = new Date(Date.now() - minutes * 60 * 1000);
+    
+    return this.prisma.transaction.findMany({
+      where: {
+        chain_id: chainId,
+        timestamp: {
+          gte: cutoffTime,
+        },
+      },
+      orderBy: {
+        timestamp: 'desc',
+      },
+    });
+  }
 }

@@ -4,21 +4,8 @@ import { QueueService } from '../queue/queue.service';
 import { ConfigService } from '../config/config.service';
 import { ChainRepository } from '../persistence/repositories/chain.repository';
 import { ContractRepository } from '../persistence/repositories/contract.repository';
-
-// Event signatures for the protocol
-const CONTROLLER_EVENTS = [
-  'AddCollateral(address indexed user, uint256 amount, address indexed asset)',
-  'CollateralAdded(address indexed user, uint256 amount, address indexed asset)',
-  'CollateralRejected(address indexed user, uint256 amount, address indexed asset, string reason)',
-  'Borrow(address indexed user, uint256 amount, address indexed asset)',
-  'BorrowUpdated(address indexed user, uint256 amount, address indexed asset)',
-  'BorrowRejected(address indexed user, uint256 amount, address indexed asset, string reason)',
-];
-
-const ROUTER_EVENTS = [
-  'MessageSent(uint256 indexed nonce, uint256 indexed fromChain, uint256 indexed toChain, bytes data)',
-  'MessageReceived(uint256 indexed nonce, uint256 indexed fromChain, uint256 indexed toChain, bytes data)',
-];
+import { Abi, decodeEventLog } from 'viem';
+import { ControllerABI, RouterABI } from 'contracts';
 
 @Injectable()
 export class EventIndexerService {
@@ -31,6 +18,15 @@ export class EventIndexerService {
     private chainRepository: ChainRepository,
     private contractRepository: ContractRepository,
   ) {}
+
+  private serializeDecodedArgs(args: any): string {
+    return JSON.stringify(args, (key, value) => {
+      if (typeof value === 'bigint') {
+        return value.toString();
+      }
+      return value;
+    });
+  }
 
   async indexEventsForChain(chainId: number, fromBlock: bigint, toBlock: bigint): Promise<void> {
     const client = this.chainProviderService.getHttpClient(chainId);
@@ -70,8 +66,7 @@ export class EventIndexerService {
   ): Promise<void> {
     const client = this.chainProviderService.getHttpClient(chainId);
     if (!client) return;
-
-    const eventSignatures = contractType === 'Controller' ? CONTROLLER_EVENTS : ROUTER_EVENTS;
+    const abi = (contractType === 'Controller' ? ControllerABI : RouterABI) as unknown as Abi;
     
     try {
       const logs = await client.getLogs({
@@ -84,32 +79,32 @@ export class EventIndexerService {
 
       for (const log of logs) {
         try {
-          for (const eventSig of eventSignatures) {
-            try {
-              const eventName = eventSig.split('(')[0];
-              
-              this.logger.log(`Logging params to define topics field: ${JSON.stringify(log)}`)
-              await this.queueService.addRawEventJob({
-                chainId,
-                txHash: log.transactionHash,
-                logIndex: log.logIndex,
-                blockNumber: BigInt(log.blockNumber).toString(),
-                blockHash: log.blockHash,
-                contractAddress: log.address,
-                eventName,
-                data: log.data,
-                topics: ["log.topics"],
-                timestamp: new Date(),
-              });
+          const decoded = decodeEventLog({
+            abi,
+            topics: (log as any).topics as [signature: `0x${string}`, ...args: `0x${string}`[]],
+            data: log.data,
+          });
 
-              break; // Found a matching event, move to next log
-            } catch (decodeError) {
-              // This event signature doesn't match, continue with the next one
-              continue;
-            }
-          }
-        } catch (error) {
-          this.logger.warn(`Failed to process log ${log.transactionHash}:${log.logIndex}: ${error.message}`);
+          await this.queueService.addRawEventJob({
+            chainId,
+            txHash: log.transactionHash,
+            logIndex: log.logIndex,
+            blockNumber: BigInt(log.blockNumber).toString(),
+            blockHash: log.blockHash,
+            contractAddress: log.address,
+            eventName: decoded.eventName,
+            // data: log.data,
+            data: this.serializeDecodedArgs(decoded.args),
+            topics: ((log as any).topics ?? []) as string[],
+            timestamp: new Date(),
+          });
+
+        } catch (decodeError) {
+          this.logger.debug(
+            `Error decoding event for ${contractType} contract ${contractAddress} on chain ${chainId} for log ${log.transactionHash}:${log.logIndex}. ` +
+            `Error: ${decodeError}`
+          );
+          continue;
         }
       }
     } catch (error) {
@@ -154,9 +149,7 @@ export class EventIndexerService {
         },
       });
 
-      this.logger.log(`WebSocket subscription active for chain ${chainId}`);
-      
-      // TODO: Store the unwatch function for cleanup if needed
+      this.logger.log(`WebSocket subscription active for chain ${chainId}`);      
       
     } catch (error) {
       this.logger.error(`Failed to set up WebSocket subscription for chain ${chainId}: ${error.message}`);

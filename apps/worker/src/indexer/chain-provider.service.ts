@@ -61,7 +61,6 @@ export class ChainProviderService implements OnModuleDestroy {
 
   private setupChainProvider(chainId: number, config: ChainConfig, viemChain: any) {
     try {
-      console.log(config)
       const httpClient = createPublicClient({
         chain: viemChain,
         transport: http(config.rpcUrls[0], {
