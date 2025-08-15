@@ -2,6 +2,33 @@ import { PrismaClient, ChainStatus, ContractType, TransactionStatus, BufferStatu
 
 const prisma = new PrismaClient()
 
+async function dropAllTables() {
+  console.log('Dropping all tables, indexes, and types...')
+  try {
+    // Drop tables in reverse dependency order (children first, then parents)
+    await prisma.$executeRaw`DROP TABLE IF EXISTS "events" CASCADE;`
+    await prisma.$executeRaw`DROP TABLE IF EXISTS "operations" CASCADE;`
+    await prisma.$executeRaw`DROP TABLE IF EXISTS "messages" CASCADE;`
+    await prisma.$executeRaw`DROP TABLE IF EXISTS "transactions" CASCADE;`
+    await prisma.$executeRaw`DROP TABLE IF EXISTS "contracts" CASCADE;`
+    await prisma.$executeRaw`DROP TABLE IF EXISTS "chains" CASCADE;`
+    
+    // Drop custom types
+    await prisma.$executeRaw`DROP TYPE IF EXISTS "ChainStatus" CASCADE;`
+    await prisma.$executeRaw`DROP TYPE IF EXISTS "ContractType" CASCADE;`
+    await prisma.$executeRaw`DROP TYPE IF EXISTS "TransactionStatus" CASCADE;`
+    await prisma.$executeRaw`DROP TYPE IF EXISTS "BufferStatus" CASCADE;`
+    await prisma.$executeRaw`DROP TYPE IF EXISTS "MessageStatus" CASCADE;`
+    await prisma.$executeRaw`DROP TYPE IF EXISTS "OperationType" CASCADE;`
+    await prisma.$executeRaw`DROP TYPE IF EXISTS "OperationStatus" CASCADE;`
+    
+    console.log('✓ All tables, indexes, and types dropped successfully!')
+  } catch (error) {
+    console.error('Error dropping tables:', error.message)
+    throw error
+  }
+}
+
 async function ensureTablesExist() {
   console.log('Ensuring tables exist...')
   
@@ -327,11 +354,31 @@ async function ensureTablesExist() {
   }
 }
 
+async function resetDatabase() {
+  console.log('Resetting database completely...')
+  try {
+    await dropAllTables()
+    await ensureTablesExist()
+    console.log('✓ Database reset completed successfully!')
+  } catch (error) {
+    console.error('Error resetting database:', error.message)
+    throw error
+  }
+}
+
 async function main() {
   console.log('Starting database seeding...')
   
-  // Ensure tables exist first
-  await ensureTablesExist()
+  // Check if --reset flag is passed
+  const shouldReset = process.argv.includes('--reset')
+  
+  if (shouldReset) {
+    console.log('Reset flag detected, completely resetting database...')
+    await resetDatabase()
+  } else {
+    // Ensure tables exist first
+    await ensureTablesExist()
+  }
   
   console.log('Cleaning existing data...')
 
@@ -365,10 +412,10 @@ async function main() {
     }),
     prisma.chain.create({
       data: {
-        chain_id: 111555111,
+        chain_id: 11155111,
         name: 'Sepolia',
         status: ChainStatus.active,
-        last_block_processed: BigInt('8983800'),
+        last_block_processed: BigInt('8990840'),
         provider_urls: ["https://ethereum-sepolia-rpc.publicnode.com", "wss://sepolia.gateway.tenderly.co", "wss://ethereum-sepolia-rpc.publicnode.com", "https://sepolia.infura.io"]
       }
     })
@@ -381,7 +428,7 @@ async function main() {
     prisma.contract.create({
       data: {
         address: '0xC100bf5eF82Bfd8873E584176657754F3Ba36E15',
-        chain_id: 111555111,
+        chain_id: 11155111,
         type: ContractType.Controller,
         deployment_block: BigInt('8983589'),
         abi_hash: 'controller_abi_hash_v1'
@@ -390,7 +437,7 @@ async function main() {
     prisma.contract.create({
       data: {
         address: '0xa9d636dab1Ae75EB932d9Ab6D2184971edCaF196',
-        chain_id: 111555111,
+        chain_id: 11155111,
         type: ContractType.Router,
         deployment_block: BigInt('8983600'),
         abi_hash: 'router_abi_hash_v1'
