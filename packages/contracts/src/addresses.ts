@@ -48,8 +48,8 @@ export const CHAIN_CONFIGS: Record<number, ChainConfig> = {
       "https://ethereum-sepolia-rpc.publicnode.com"
     ],
     contracts: {
-      controller: '0xBF69aDA28ed7598dF669DFc0962d0065464Cc311',
-      router: '0xfF23C2C86820705b32245AD3a23BA37127978651'
+      controller: '0xC100bf5eF82Bfd8873E584176657754F3Ba36E15',
+      router: '0xa9d636dab1Ae75EB932d9Ab6D2184971edCaF196'
     }
   }
 };

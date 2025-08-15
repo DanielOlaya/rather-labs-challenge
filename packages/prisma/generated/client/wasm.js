@@ -158,7 +158,8 @@ exports.Prisma.EventScalarFieldEnum = {
   contract_address: 'contract_address',
   params: 'params',
   correlation_window_id: 'correlation_window_id',
-  buffer_status: 'buffer_status'
+  buffer_status: 'buffer_status',
+  operation_id: 'operation_id'
 };
 
 exports.Prisma.MessageScalarFieldEnum = {
@@ -243,7 +244,8 @@ exports.TransactionStatus = exports.$Enums.TransactionStatus = {
 exports.BufferStatus = exports.$Enums.BufferStatus = {
   immediate: 'immediate',
   buffered: 'buffered',
-  expired: 'expired'
+  expired: 'expired',
+  processed: 'processed'
 };
 
 exports.MessageStatus = exports.$Enums.MessageStatus = {

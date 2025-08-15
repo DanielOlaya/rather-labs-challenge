@@ -395,12 +395,12 @@
     "inputs": [
       {
         "internalType": "uint256",
-        "name": "fromChain",
+        "name": "nonce",
         "type": "uint256"
       },
       {
         "internalType": "uint256",
-        "name": "nonce",
+        "name": "fromChain",
         "type": "uint256"
       },
       {
@@ -433,6 +433,11 @@
     "inputs": [
       {
         "internalType": "uint256",
+        "name": "nonce",
+        "type": "uint256"
+      },
+      {
+        "internalType": "uint256",
         "name": "toChain",
         "type": "uint256"
       },
@@ -459,6 +464,11 @@
   },
   {
     "inputs": [
+      {
+        "internalType": "uint256",
+        "name": "nonce",
+        "type": "uint256"
+      },
       {
         "internalType": "address",
         "name": "user",

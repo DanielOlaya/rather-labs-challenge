@@ -31,6 +31,7 @@ enum BufferStatus {
   immediate
   buffered
   expired
+  processed
 }
 
 enum MessageStatus {
@@ -123,10 +124,12 @@ model Event {
   params                Json
   correlation_window_id String?       @db.Uuid
   buffer_status         BufferStatus
+  operation_id          String?       @db.Uuid
 
   // Relations
   chain       Chain       @relation(fields: [chain_id], references: [chain_id])
   transaction Transaction @relation(fields: [tx_hash], references: [hash])
+  operation  Operation?  @relation(fields: [operation_id], references: [op_id])
 
   @@unique([chain_id, tx_hash, log_index])
   @@index([chain_id])
@@ -135,6 +138,7 @@ model Event {
   @@index([name])
   @@index([correlation_window_id])
   @@index([buffer_status])
+  @@index([operation_id])
   @@map("events")
 }
 
@@ -190,6 +194,7 @@ model Operation {
   message            Message?     @relation(fields: [message_id], references: [message_id])
   start_transaction  Transaction  @relation("Operationstart_transaction", fields: [start_tx_id], references: [tx_id])
   end_transaction    Transaction? @relation("OperationEndTransaction", fields: [end_tx_id], references: [tx_id])
+  events             Event[]
 
   @@index([op_type])
   @@index([user_address])

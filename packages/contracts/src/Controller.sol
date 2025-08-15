@@ -8,7 +8,15 @@ pragma solidity ^0.8.19;
  */
 contract Controller {
     
-    // Events
+    // Events for Add Collateral operation
+    event AddCollateral(
+        address indexed user,
+        address indexed token,
+        uint256 amount,
+        uint256 indexed operationId,
+        uint256 timestamp
+    );
+    
     event CollateralAdded(
         address indexed user,
         address indexed token,
@@ -17,6 +25,16 @@ contract Controller {
         uint256 timestamp
     );
     
+    event CollateralRejected(
+        address indexed user,
+        address indexed token,
+        uint256 amount,
+        uint256 indexed operationId,
+        string reason,
+        uint256 timestamp
+    );
+    
+    // Events for Borrow operation
     event Borrow(
         address indexed user,
         address indexed token,
@@ -26,6 +44,25 @@ contract Controller {
         uint256 timestamp
     );
     
+    event BorrowUpdated(
+        address indexed user,
+        address indexed token,
+        uint256 amount,
+        uint256 indexed operationId,
+        uint256 newCollateralAmount,
+        uint256 timestamp
+    );
+    
+    event BorrowRejected(
+        address indexed user,
+        address indexed token,
+        uint256 amount,
+        uint256 indexed operationId,
+        string reason,
+        uint256 timestamp
+    );
+    
+    // Events for Withdraw operation
     event Withdraw(
         address indexed user,
         address indexed token,
@@ -34,6 +71,24 @@ contract Controller {
         uint256 timestamp
     );
     
+    event WithdrawRejected(
+        address indexed user,
+        address indexed token,
+        uint256 amount,
+        uint256 indexed operationId,
+        string reason,
+        uint256 timestamp
+    );
+    
+    event Withdrawn(
+        address indexed user,
+        address indexed token,
+        uint256 amount,
+        uint256 indexed operationId,
+        uint256 timestamp
+    );
+    
+    // General operation events
     event OperationStarted(
         uint256 indexed operationId,
         address indexed user,
@@ -48,15 +103,6 @@ contract Controller {
         address indexed user,
         uint8 operationType,
         bool success,
-        uint256 timestamp
-    );
-    
-    event CollateralRejected(
-        address indexed user,
-        address indexed token,
-        uint256 amount,
-        uint256 indexed operationId,
-        string reason,
         uint256 timestamp
     );
     
@@ -93,6 +139,15 @@ contract Controller {
             block.timestamp
         );
         
+        // Emit add collateral intent
+        emit AddCollateral(
+            msg.sender,
+            token,
+            amount,
+            operationId,
+            block.timestamp
+        );
+        
         // Simple validation (in real implementation, would check token validity, etc.)
         if (amount < 1000) { // Minimum collateral requirement
             emit CollateralRejected(
@@ -101,6 +156,14 @@ contract Controller {
                 amount,
                 operationId,
                 "Insufficient collateral amount",
+                block.timestamp
+            );
+            
+            emit OperationCompleted(
+                operationId,
+                msg.sender,
+                ADD_COLLATERAL,
+                false,
                 block.timestamp
             );
             return;
@@ -136,7 +199,6 @@ contract Controller {
         uint256 collateralAmount
     ) external {
         require(amount > 0, "Amount must be greater than 0");
-        require(userCollateral[msg.sender] >= collateralAmount, "Insufficient collateral");
         
         uint256 operationId = nextOperationId++;
         
@@ -148,6 +210,48 @@ contract Controller {
             block.chainid,
             block.timestamp
         );
+        
+        // Check collateral requirement
+        if (userCollateral[msg.sender] < collateralAmount) {
+            emit BorrowRejected(
+                msg.sender,
+                token,
+                amount,
+                operationId,
+                "Insufficient collateral",
+                block.timestamp
+            );
+            
+            emit OperationCompleted(
+                operationId,
+                msg.sender,
+                BORROW,
+                false,
+                block.timestamp
+            );
+            return;
+        }
+        
+        // Additional validation (e.g., LTV ratio)
+        if (amount > collateralAmount * 75 / 100) { // 75% LTV max
+            emit BorrowRejected(
+                msg.sender,
+                token,
+                amount,
+                operationId,
+                "Exceeds maximum LTV ratio",
+                block.timestamp
+            );
+            
+            emit OperationCompleted(
+                operationId,
+                msg.sender,
+                BORROW,
+                false,
+                block.timestamp
+            );
+            return;
+        }
         
         emit Borrow(
             msg.sender,
@@ -168,6 +272,47 @@ contract Controller {
     }
     
     /**
+     * @dev Update existing borrow position
+     */
+    function updateBorrow(
+        address token,
+        uint256 newAmount,
+        uint256 newCollateralAmount,
+        uint256 existingOperationId
+    ) external {
+        require(newAmount > 0, "Amount must be greater than 0");
+        require(operations[existingOperationId], "Operation does not exist");
+        
+        uint256 operationId = nextOperationId++;
+        
+        emit OperationStarted(
+            operationId,
+            msg.sender,
+            BORROW,
+            block.chainid,
+            block.chainid,
+            block.timestamp
+        );
+        
+        emit BorrowUpdated(
+            msg.sender,
+            token,
+            newAmount,
+            operationId,
+            newCollateralAmount,
+            block.timestamp
+        );
+        
+        emit OperationCompleted(
+            operationId,
+            msg.sender,
+            BORROW,
+            true,
+            block.timestamp
+        );
+    }
+    
+    /**
      * @dev Withdraw collateral
      */
     function withdraw(
@@ -175,7 +320,6 @@ contract Controller {
         uint256 amount
     ) external {
         require(amount > 0, "Amount must be greater than 0");
-        require(userCollateral[msg.sender] >= amount, "Insufficient balance");
         
         uint256 operationId = nextOperationId++;
         
@@ -188,9 +332,61 @@ contract Controller {
             block.timestamp
         );
         
+        // Emit withdraw intent
+        emit Withdraw(
+            msg.sender,
+            token,
+            amount,
+            operationId,
+            block.timestamp
+        );
+        
+        // Check if user has sufficient balance
+        if (userCollateral[msg.sender] < amount) {
+            emit WithdrawRejected(
+                msg.sender,
+                token,
+                amount,
+                operationId,
+                "Insufficient balance",
+                block.timestamp
+            );
+            
+            emit OperationCompleted(
+                operationId,
+                msg.sender,
+                WITHDRAW,
+                false,
+                block.timestamp
+            );
+            return;
+        }
+        
+        // Additional validation (e.g., ensure withdrawal doesn't break collateral requirements)
+        uint256 remainingCollateral = userCollateral[msg.sender] - amount;
+        if (remainingCollateral < 500) { // Minimum collateral requirement
+            emit WithdrawRejected(
+                msg.sender,
+                token,
+                amount,
+                operationId,
+                "Would leave insufficient collateral",
+                block.timestamp
+            );
+            
+            emit OperationCompleted(
+                operationId,
+                msg.sender,
+                WITHDRAW,
+                false,
+                block.timestamp
+            );
+            return;
+        }
+        
         userCollateral[msg.sender] -= amount;
         
-        emit Withdraw(
+        emit Withdrawn(
             msg.sender,
             token,
             amount,

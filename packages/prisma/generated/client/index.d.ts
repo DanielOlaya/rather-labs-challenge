@@ -77,7 +77,8 @@ export type TransactionStatus = (typeof TransactionStatus)[keyof typeof Transact
 export const BufferStatus: {
   immediate: 'immediate',
   buffered: 'buffered',
-  expired: 'expired'
+  expired: 'expired',
+  processed: 'processed'
 };
 
 export type BufferStatus = (typeof BufferStatus)[keyof typeof BufferStatus]
@@ -1547,6 +1548,37 @@ export namespace Prisma {
    */
   export type MessageCountOutputTypeCountOperationsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     where?: OperationWhereInput
+  }
+
+
+  /**
+   * Count Type OperationCountOutputType
+   */
+
+  export type OperationCountOutputType = {
+    events: number
+  }
+
+  export type OperationCountOutputTypeSelect<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    events?: boolean | OperationCountOutputTypeCountEventsArgs
+  }
+
+  // Custom InputTypes
+  /**
+   * OperationCountOutputType without action
+   */
+  export type OperationCountOutputTypeDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the OperationCountOutputType
+     */
+    select?: OperationCountOutputTypeSelect<ExtArgs> | null
+  }
+
+  /**
+   * OperationCountOutputType without action
+   */
+  export type OperationCountOutputTypeCountEventsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    where?: EventWhereInput
   }
 
 
@@ -4815,6 +4847,7 @@ export namespace Prisma {
     contract_address: string | null
     correlation_window_id: string | null
     buffer_status: $Enums.BufferStatus | null
+    operation_id: string | null
   }
 
   export type EventMaxAggregateOutputType = {
@@ -4826,6 +4859,7 @@ export namespace Prisma {
     contract_address: string | null
     correlation_window_id: string | null
     buffer_status: $Enums.BufferStatus | null
+    operation_id: string | null
   }
 
   export type EventCountAggregateOutputType = {
@@ -4838,6 +4872,7 @@ export namespace Prisma {
     params: number
     correlation_window_id: number
     buffer_status: number
+    operation_id: number
     _all: number
   }
 
@@ -4861,6 +4896,7 @@ export namespace Prisma {
     contract_address?: true
     correlation_window_id?: true
     buffer_status?: true
+    operation_id?: true
   }
 
   export type EventMaxAggregateInputType = {
@@ -4872,6 +4908,7 @@ export namespace Prisma {
     contract_address?: true
     correlation_window_id?: true
     buffer_status?: true
+    operation_id?: true
   }
 
   export type EventCountAggregateInputType = {
@@ -4884,6 +4921,7 @@ export namespace Prisma {
     params?: true
     correlation_window_id?: true
     buffer_status?: true
+    operation_id?: true
     _all?: true
   }
 
@@ -4983,6 +5021,7 @@ export namespace Prisma {
     params: JsonValue
     correlation_window_id: string | null
     buffer_status: $Enums.BufferStatus
+    operation_id: string | null
     _count: EventCountAggregateOutputType | null
     _avg: EventAvgAggregateOutputType | null
     _sum: EventSumAggregateOutputType | null
@@ -5014,8 +5053,10 @@ export namespace Prisma {
     params?: boolean
     correlation_window_id?: boolean
     buffer_status?: boolean
+    operation_id?: boolean
     chain?: boolean | ChainDefaultArgs<ExtArgs>
     transaction?: boolean | TransactionDefaultArgs<ExtArgs>
+    operation?: boolean | Event$operationArgs<ExtArgs>
   }, ExtArgs["result"]["event"]>
 
   export type EventSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -5028,8 +5069,10 @@ export namespace Prisma {
     params?: boolean
     correlation_window_id?: boolean
     buffer_status?: boolean
+    operation_id?: boolean
     chain?: boolean | ChainDefaultArgs<ExtArgs>
     transaction?: boolean | TransactionDefaultArgs<ExtArgs>
+    operation?: boolean | Event$operationArgs<ExtArgs>
   }, ExtArgs["result"]["event"]>
 
   export type EventSelectScalar = {
@@ -5042,15 +5085,18 @@ export namespace Prisma {
     params?: boolean
     correlation_window_id?: boolean
     buffer_status?: boolean
+    operation_id?: boolean
   }
 
   export type EventInclude<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     chain?: boolean | ChainDefaultArgs<ExtArgs>
     transaction?: boolean | TransactionDefaultArgs<ExtArgs>
+    operation?: boolean | Event$operationArgs<ExtArgs>
   }
   export type EventIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     chain?: boolean | ChainDefaultArgs<ExtArgs>
     transaction?: boolean | TransactionDefaultArgs<ExtArgs>
+    operation?: boolean | Event$operationArgs<ExtArgs>
   }
 
   export type $EventPayload<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -5058,6 +5104,7 @@ export namespace Prisma {
     objects: {
       chain: Prisma.$ChainPayload<ExtArgs>
       transaction: Prisma.$TransactionPayload<ExtArgs>
+      operation: Prisma.$OperationPayload<ExtArgs> | null
     }
     scalars: $Extensions.GetPayloadResult<{
       event_id: string
@@ -5069,6 +5116,7 @@ export namespace Prisma {
       params: Prisma.JsonValue
       correlation_window_id: string | null
       buffer_status: $Enums.BufferStatus
+      operation_id: string | null
     }, ExtArgs["result"]["event"]>
     composites: {}
   }
@@ -5435,6 +5483,7 @@ export namespace Prisma {
     readonly [Symbol.toStringTag]: "PrismaPromise"
     chain<T extends ChainDefaultArgs<ExtArgs> = {}>(args?: Subset<T, ChainDefaultArgs<ExtArgs>>): Prisma__ChainClient<$Result.GetResult<Prisma.$ChainPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
     transaction<T extends TransactionDefaultArgs<ExtArgs> = {}>(args?: Subset<T, TransactionDefaultArgs<ExtArgs>>): Prisma__TransactionClient<$Result.GetResult<Prisma.$TransactionPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
+    operation<T extends Event$operationArgs<ExtArgs> = {}>(args?: Subset<T, Event$operationArgs<ExtArgs>>): Prisma__OperationClient<$Result.GetResult<Prisma.$OperationPayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -5473,6 +5522,7 @@ export namespace Prisma {
     readonly params: FieldRef<"Event", 'Json'>
     readonly correlation_window_id: FieldRef<"Event", 'String'>
     readonly buffer_status: FieldRef<"Event", 'BufferStatus'>
+    readonly operation_id: FieldRef<"Event", 'String'>
   }
     
 
@@ -5788,6 +5838,21 @@ export namespace Prisma {
      * Filter which Events to delete
      */
     where?: EventWhereInput
+  }
+
+  /**
+   * Event.operation
+   */
+  export type Event$operationArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Operation
+     */
+    select?: OperationSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: OperationInclude<ExtArgs> | null
+    where?: OperationWhereInput
   }
 
   /**
@@ -7198,6 +7263,8 @@ export namespace Prisma {
     message?: boolean | Operation$messageArgs<ExtArgs>
     start_transaction?: boolean | TransactionDefaultArgs<ExtArgs>
     end_transaction?: boolean | Operation$end_transactionArgs<ExtArgs>
+    events?: boolean | Operation$eventsArgs<ExtArgs>
+    _count?: boolean | OperationCountOutputTypeDefaultArgs<ExtArgs>
   }, ExtArgs["result"]["operation"]>
 
   export type OperationSelectCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = $Extensions.GetSelect<{
@@ -7253,6 +7320,8 @@ export namespace Prisma {
     message?: boolean | Operation$messageArgs<ExtArgs>
     start_transaction?: boolean | TransactionDefaultArgs<ExtArgs>
     end_transaction?: boolean | Operation$end_transactionArgs<ExtArgs>
+    events?: boolean | Operation$eventsArgs<ExtArgs>
+    _count?: boolean | OperationCountOutputTypeDefaultArgs<ExtArgs>
   }
   export type OperationIncludeCreateManyAndReturn<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
     from_chain_rel?: boolean | ChainDefaultArgs<ExtArgs>
@@ -7270,6 +7339,7 @@ export namespace Prisma {
       message: Prisma.$MessagePayload<ExtArgs> | null
       start_transaction: Prisma.$TransactionPayload<ExtArgs>
       end_transaction: Prisma.$TransactionPayload<ExtArgs> | null
+      events: Prisma.$EventPayload<ExtArgs>[]
     }
     scalars: $Extensions.GetPayloadResult<{
       op_id: string
@@ -7659,6 +7729,7 @@ export namespace Prisma {
     message<T extends Operation$messageArgs<ExtArgs> = {}>(args?: Subset<T, Operation$messageArgs<ExtArgs>>): Prisma__MessageClient<$Result.GetResult<Prisma.$MessagePayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
     start_transaction<T extends TransactionDefaultArgs<ExtArgs> = {}>(args?: Subset<T, TransactionDefaultArgs<ExtArgs>>): Prisma__TransactionClient<$Result.GetResult<Prisma.$TransactionPayload<ExtArgs>, T, "findUniqueOrThrow"> | Null, Null, ExtArgs>
     end_transaction<T extends Operation$end_transactionArgs<ExtArgs> = {}>(args?: Subset<T, Operation$end_transactionArgs<ExtArgs>>): Prisma__TransactionClient<$Result.GetResult<Prisma.$TransactionPayload<ExtArgs>, T, "findUniqueOrThrow"> | null, null, ExtArgs>
+    events<T extends Operation$eventsArgs<ExtArgs> = {}>(args?: Subset<T, Operation$eventsArgs<ExtArgs>>): Prisma.PrismaPromise<$Result.GetResult<Prisma.$EventPayload<ExtArgs>, T, "findMany"> | Null>
     /**
      * Attaches callbacks for the resolution and/or rejection of the Promise.
      * @param onfulfilled The callback to execute when the Promise is resolved.
@@ -8054,6 +8125,26 @@ export namespace Prisma {
   }
 
   /**
+   * Operation.events
+   */
+  export type Operation$eventsArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
+    /**
+     * Select specific fields to fetch from the Event
+     */
+    select?: EventSelect<ExtArgs> | null
+    /**
+     * Choose, which related nodes to fetch as well
+     */
+    include?: EventInclude<ExtArgs> | null
+    where?: EventWhereInput
+    orderBy?: EventOrderByWithRelationInput | EventOrderByWithRelationInput[]
+    cursor?: EventWhereUniqueInput
+    take?: number
+    skip?: number
+    distinct?: EventScalarFieldEnum | EventScalarFieldEnum[]
+  }
+
+  /**
    * Operation without action
    */
   export type OperationDefaultArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = {
@@ -8127,7 +8218,8 @@ export namespace Prisma {
     contract_address: 'contract_address',
     params: 'params',
     correlation_window_id: 'correlation_window_id',
-    buffer_status: 'buffer_status'
+    buffer_status: 'buffer_status',
+    operation_id: 'operation_id'
   };
 
   export type EventScalarFieldEnum = (typeof EventScalarFieldEnum)[keyof typeof EventScalarFieldEnum]
@@ -8649,8 +8741,10 @@ export namespace Prisma {
     params?: JsonFilter<"Event">
     correlation_window_id?: UuidNullableFilter<"Event"> | string | null
     buffer_status?: EnumBufferStatusFilter<"Event"> | $Enums.BufferStatus
+    operation_id?: UuidNullableFilter<"Event"> | string | null
     chain?: XOR<ChainRelationFilter, ChainWhereInput>
     transaction?: XOR<TransactionRelationFilter, TransactionWhereInput>
+    operation?: XOR<OperationNullableRelationFilter, OperationWhereInput> | null
   }
 
   export type EventOrderByWithRelationInput = {
@@ -8663,8 +8757,10 @@ export namespace Prisma {
     params?: SortOrder
     correlation_window_id?: SortOrderInput | SortOrder
     buffer_status?: SortOrder
+    operation_id?: SortOrderInput | SortOrder
     chain?: ChainOrderByWithRelationInput
     transaction?: TransactionOrderByWithRelationInput
+    operation?: OperationOrderByWithRelationInput
   }
 
   export type EventWhereUniqueInput = Prisma.AtLeast<{
@@ -8681,8 +8777,10 @@ export namespace Prisma {
     params?: JsonFilter<"Event">
     correlation_window_id?: UuidNullableFilter<"Event"> | string | null
     buffer_status?: EnumBufferStatusFilter<"Event"> | $Enums.BufferStatus
+    operation_id?: UuidNullableFilter<"Event"> | string | null
     chain?: XOR<ChainRelationFilter, ChainWhereInput>
     transaction?: XOR<TransactionRelationFilter, TransactionWhereInput>
+    operation?: XOR<OperationNullableRelationFilter, OperationWhereInput> | null
   }, "event_id" | "chain_id_tx_hash_log_index">
 
   export type EventOrderByWithAggregationInput = {
@@ -8695,6 +8793,7 @@ export namespace Prisma {
     params?: SortOrder
     correlation_window_id?: SortOrderInput | SortOrder
     buffer_status?: SortOrder
+    operation_id?: SortOrderInput | SortOrder
     _count?: EventCountOrderByAggregateInput
     _avg?: EventAvgOrderByAggregateInput
     _max?: EventMaxOrderByAggregateInput
@@ -8715,6 +8814,7 @@ export namespace Prisma {
     params?: JsonWithAggregatesFilter<"Event">
     correlation_window_id?: UuidNullableWithAggregatesFilter<"Event"> | string | null
     buffer_status?: EnumBufferStatusWithAggregatesFilter<"Event"> | $Enums.BufferStatus
+    operation_id?: UuidNullableWithAggregatesFilter<"Event"> | string | null
   }
 
   export type MessageWhereInput = {
@@ -8833,6 +8933,7 @@ export namespace Prisma {
     message?: XOR<MessageNullableRelationFilter, MessageWhereInput> | null
     start_transaction?: XOR<TransactionRelationFilter, TransactionWhereInput>
     end_transaction?: XOR<TransactionNullableRelationFilter, TransactionWhereInput> | null
+    events?: EventListRelationFilter
   }
 
   export type OperationOrderByWithRelationInput = {
@@ -8859,6 +8960,7 @@ export namespace Prisma {
     message?: MessageOrderByWithRelationInput
     start_transaction?: TransactionOrderByWithRelationInput
     end_transaction?: TransactionOrderByWithRelationInput
+    events?: EventOrderByRelationAggregateInput
   }
 
   export type OperationWhereUniqueInput = Prisma.AtLeast<{
@@ -8888,6 +8990,7 @@ export namespace Prisma {
     message?: XOR<MessageNullableRelationFilter, MessageWhereInput> | null
     start_transaction?: XOR<TransactionRelationFilter, TransactionWhereInput>
     end_transaction?: XOR<TransactionNullableRelationFilter, TransactionWhereInput> | null
+    events?: EventListRelationFilter
   }, "op_id">
 
   export type OperationOrderByWithAggregationInput = {
@@ -9185,6 +9288,7 @@ export namespace Prisma {
     buffer_status: $Enums.BufferStatus
     chain: ChainCreateNestedOneWithoutEventsInput
     transaction: TransactionCreateNestedOneWithoutEventsInput
+    operation?: OperationCreateNestedOneWithoutEventsInput
   }
 
   export type EventUncheckedCreateInput = {
@@ -9197,6 +9301,7 @@ export namespace Prisma {
     params: JsonNullValueInput | InputJsonValue
     correlation_window_id?: string | null
     buffer_status: $Enums.BufferStatus
+    operation_id?: string | null
   }
 
   export type EventUpdateInput = {
@@ -9209,6 +9314,7 @@ export namespace Prisma {
     buffer_status?: EnumBufferStatusFieldUpdateOperationsInput | $Enums.BufferStatus
     chain?: ChainUpdateOneRequiredWithoutEventsNestedInput
     transaction?: TransactionUpdateOneRequiredWithoutEventsNestedInput
+    operation?: OperationUpdateOneWithoutEventsNestedInput
   }
 
   export type EventUncheckedUpdateInput = {
@@ -9221,6 +9327,7 @@ export namespace Prisma {
     params?: JsonNullValueInput | InputJsonValue
     correlation_window_id?: NullableStringFieldUpdateOperationsInput | string | null
     buffer_status?: EnumBufferStatusFieldUpdateOperationsInput | $Enums.BufferStatus
+    operation_id?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type EventCreateManyInput = {
@@ -9233,6 +9340,7 @@ export namespace Prisma {
     params: JsonNullValueInput | InputJsonValue
     correlation_window_id?: string | null
     buffer_status: $Enums.BufferStatus
+    operation_id?: string | null
   }
 
   export type EventUpdateManyMutationInput = {
@@ -9255,6 +9363,7 @@ export namespace Prisma {
     params?: JsonNullValueInput | InputJsonValue
     correlation_window_id?: NullableStringFieldUpdateOperationsInput | string | null
     buffer_status?: EnumBufferStatusFieldUpdateOperationsInput | $Enums.BufferStatus
+    operation_id?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type MessageCreateInput = {
@@ -9360,6 +9469,7 @@ export namespace Prisma {
     message?: MessageCreateNestedOneWithoutOperationsInput
     start_transaction: TransactionCreateNestedOneWithoutOperations_startInput
     end_transaction?: TransactionCreateNestedOneWithoutOperations_endInput
+    events?: EventCreateNestedManyWithoutOperationInput
   }
 
   export type OperationUncheckedCreateInput = {
@@ -9381,6 +9491,7 @@ export namespace Prisma {
     last_event_at: Date | string
     next_retry_at?: Date | string | null
     error_context?: NullableJsonNullValueInput | InputJsonValue
+    events?: EventUncheckedCreateNestedManyWithoutOperationInput
   }
 
   export type OperationUpdateInput = {
@@ -9402,6 +9513,7 @@ export namespace Prisma {
     message?: MessageUpdateOneWithoutOperationsNestedInput
     start_transaction?: TransactionUpdateOneRequiredWithoutOperations_startNestedInput
     end_transaction?: TransactionUpdateOneWithoutOperations_endNestedInput
+    events?: EventUpdateManyWithoutOperationNestedInput
   }
 
   export type OperationUncheckedUpdateInput = {
@@ -9423,6 +9535,7 @@ export namespace Prisma {
     last_event_at?: DateTimeFieldUpdateOperationsInput | Date | string
     next_retry_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     error_context?: NullableJsonNullValueInput | InputJsonValue
+    events?: EventUncheckedUpdateManyWithoutOperationNestedInput
   }
 
   export type OperationCreateManyInput = {
@@ -9910,6 +10023,11 @@ export namespace Prisma {
     isNot?: TransactionWhereInput
   }
 
+  export type OperationNullableRelationFilter = {
+    is?: OperationWhereInput | null
+    isNot?: OperationWhereInput | null
+  }
+
   export type SortOrderInput = {
     sort: SortOrder
     nulls?: NullsOrder
@@ -9931,6 +10049,7 @@ export namespace Prisma {
     params?: SortOrder
     correlation_window_id?: SortOrder
     buffer_status?: SortOrder
+    operation_id?: SortOrder
   }
 
   export type EventAvgOrderByAggregateInput = {
@@ -9947,6 +10066,7 @@ export namespace Prisma {
     contract_address?: SortOrder
     correlation_window_id?: SortOrder
     buffer_status?: SortOrder
+    operation_id?: SortOrder
   }
 
   export type EventMinOrderByAggregateInput = {
@@ -9958,6 +10078,7 @@ export namespace Prisma {
     contract_address?: SortOrder
     correlation_window_id?: SortOrder
     buffer_status?: SortOrder
+    operation_id?: SortOrder
   }
 
   export type EventSumOrderByAggregateInput = {
@@ -10911,6 +11032,12 @@ export namespace Prisma {
     connect?: TransactionWhereUniqueInput
   }
 
+  export type OperationCreateNestedOneWithoutEventsInput = {
+    create?: XOR<OperationCreateWithoutEventsInput, OperationUncheckedCreateWithoutEventsInput>
+    connectOrCreate?: OperationCreateOrConnectWithoutEventsInput
+    connect?: OperationWhereUniqueInput
+  }
+
   export type NullableStringFieldUpdateOperationsInput = {
     set?: string | null
   }
@@ -10933,6 +11060,16 @@ export namespace Prisma {
     upsert?: TransactionUpsertWithoutEventsInput
     connect?: TransactionWhereUniqueInput
     update?: XOR<XOR<TransactionUpdateToOneWithWhereWithoutEventsInput, TransactionUpdateWithoutEventsInput>, TransactionUncheckedUpdateWithoutEventsInput>
+  }
+
+  export type OperationUpdateOneWithoutEventsNestedInput = {
+    create?: XOR<OperationCreateWithoutEventsInput, OperationUncheckedCreateWithoutEventsInput>
+    connectOrCreate?: OperationCreateOrConnectWithoutEventsInput
+    upsert?: OperationUpsertWithoutEventsInput
+    disconnect?: OperationWhereInput | boolean
+    delete?: OperationWhereInput | boolean
+    connect?: OperationWhereUniqueInput
+    update?: XOR<XOR<OperationUpdateToOneWithWhereWithoutEventsInput, OperationUpdateWithoutEventsInput>, OperationUncheckedUpdateWithoutEventsInput>
   }
 
   export type ChainCreateNestedOneWithoutMessages_fromInput = {
@@ -11081,6 +11218,20 @@ export namespace Prisma {
     connect?: TransactionWhereUniqueInput
   }
 
+  export type EventCreateNestedManyWithoutOperationInput = {
+    create?: XOR<EventCreateWithoutOperationInput, EventUncheckedCreateWithoutOperationInput> | EventCreateWithoutOperationInput[] | EventUncheckedCreateWithoutOperationInput[]
+    connectOrCreate?: EventCreateOrConnectWithoutOperationInput | EventCreateOrConnectWithoutOperationInput[]
+    createMany?: EventCreateManyOperationInputEnvelope
+    connect?: EventWhereUniqueInput | EventWhereUniqueInput[]
+  }
+
+  export type EventUncheckedCreateNestedManyWithoutOperationInput = {
+    create?: XOR<EventCreateWithoutOperationInput, EventUncheckedCreateWithoutOperationInput> | EventCreateWithoutOperationInput[] | EventUncheckedCreateWithoutOperationInput[]
+    connectOrCreate?: EventCreateOrConnectWithoutOperationInput | EventCreateOrConnectWithoutOperationInput[]
+    createMany?: EventCreateManyOperationInputEnvelope
+    connect?: EventWhereUniqueInput | EventWhereUniqueInput[]
+  }
+
   export type EnumOperationTypeFieldUpdateOperationsInput = {
     set?: $Enums.OperationType
   }
@@ -11139,6 +11290,34 @@ export namespace Prisma {
     delete?: TransactionWhereInput | boolean
     connect?: TransactionWhereUniqueInput
     update?: XOR<XOR<TransactionUpdateToOneWithWhereWithoutOperations_endInput, TransactionUpdateWithoutOperations_endInput>, TransactionUncheckedUpdateWithoutOperations_endInput>
+  }
+
+  export type EventUpdateManyWithoutOperationNestedInput = {
+    create?: XOR<EventCreateWithoutOperationInput, EventUncheckedCreateWithoutOperationInput> | EventCreateWithoutOperationInput[] | EventUncheckedCreateWithoutOperationInput[]
+    connectOrCreate?: EventCreateOrConnectWithoutOperationInput | EventCreateOrConnectWithoutOperationInput[]
+    upsert?: EventUpsertWithWhereUniqueWithoutOperationInput | EventUpsertWithWhereUniqueWithoutOperationInput[]
+    createMany?: EventCreateManyOperationInputEnvelope
+    set?: EventWhereUniqueInput | EventWhereUniqueInput[]
+    disconnect?: EventWhereUniqueInput | EventWhereUniqueInput[]
+    delete?: EventWhereUniqueInput | EventWhereUniqueInput[]
+    connect?: EventWhereUniqueInput | EventWhereUniqueInput[]
+    update?: EventUpdateWithWhereUniqueWithoutOperationInput | EventUpdateWithWhereUniqueWithoutOperationInput[]
+    updateMany?: EventUpdateManyWithWhereWithoutOperationInput | EventUpdateManyWithWhereWithoutOperationInput[]
+    deleteMany?: EventScalarWhereInput | EventScalarWhereInput[]
+  }
+
+  export type EventUncheckedUpdateManyWithoutOperationNestedInput = {
+    create?: XOR<EventCreateWithoutOperationInput, EventUncheckedCreateWithoutOperationInput> | EventCreateWithoutOperationInput[] | EventUncheckedCreateWithoutOperationInput[]
+    connectOrCreate?: EventCreateOrConnectWithoutOperationInput | EventCreateOrConnectWithoutOperationInput[]
+    upsert?: EventUpsertWithWhereUniqueWithoutOperationInput | EventUpsertWithWhereUniqueWithoutOperationInput[]
+    createMany?: EventCreateManyOperationInputEnvelope
+    set?: EventWhereUniqueInput | EventWhereUniqueInput[]
+    disconnect?: EventWhereUniqueInput | EventWhereUniqueInput[]
+    delete?: EventWhereUniqueInput | EventWhereUniqueInput[]
+    connect?: EventWhereUniqueInput | EventWhereUniqueInput[]
+    update?: EventUpdateWithWhereUniqueWithoutOperationInput | EventUpdateWithWhereUniqueWithoutOperationInput[]
+    updateMany?: EventUpdateManyWithWhereWithoutOperationInput | EventUpdateManyWithWhereWithoutOperationInput[]
+    deleteMany?: EventScalarWhereInput | EventScalarWhereInput[]
   }
 
   export type NestedIntFilter<$PrismaModel = never> = {
@@ -11669,6 +11848,7 @@ export namespace Prisma {
     correlation_window_id?: string | null
     buffer_status: $Enums.BufferStatus
     transaction: TransactionCreateNestedOneWithoutEventsInput
+    operation?: OperationCreateNestedOneWithoutEventsInput
   }
 
   export type EventUncheckedCreateWithoutChainInput = {
@@ -11680,6 +11860,7 @@ export namespace Prisma {
     params: JsonNullValueInput | InputJsonValue
     correlation_window_id?: string | null
     buffer_status: $Enums.BufferStatus
+    operation_id?: string | null
   }
 
   export type EventCreateOrConnectWithoutChainInput = {
@@ -11778,6 +11959,7 @@ export namespace Prisma {
     message?: MessageCreateNestedOneWithoutOperationsInput
     start_transaction: TransactionCreateNestedOneWithoutOperations_startInput
     end_transaction?: TransactionCreateNestedOneWithoutOperations_endInput
+    events?: EventCreateNestedManyWithoutOperationInput
   }
 
   export type OperationUncheckedCreateWithoutFrom_chain_relInput = {
@@ -11798,6 +11980,7 @@ export namespace Prisma {
     last_event_at: Date | string
     next_retry_at?: Date | string | null
     error_context?: NullableJsonNullValueInput | InputJsonValue
+    events?: EventUncheckedCreateNestedManyWithoutOperationInput
   }
 
   export type OperationCreateOrConnectWithoutFrom_chain_relInput = {
@@ -11828,6 +12011,7 @@ export namespace Prisma {
     message?: MessageCreateNestedOneWithoutOperationsInput
     start_transaction: TransactionCreateNestedOneWithoutOperations_startInput
     end_transaction?: TransactionCreateNestedOneWithoutOperations_endInput
+    events?: EventCreateNestedManyWithoutOperationInput
   }
 
   export type OperationUncheckedCreateWithoutTo_chain_relInput = {
@@ -11848,6 +12032,7 @@ export namespace Prisma {
     last_event_at: Date | string
     next_retry_at?: Date | string | null
     error_context?: NullableJsonNullValueInput | InputJsonValue
+    events?: EventUncheckedCreateNestedManyWithoutOperationInput
   }
 
   export type OperationCreateOrConnectWithoutTo_chain_relInput = {
@@ -11946,6 +12131,7 @@ export namespace Prisma {
     params?: JsonFilter<"Event">
     correlation_window_id?: UuidNullableFilter<"Event"> | string | null
     buffer_status?: EnumBufferStatusFilter<"Event"> | $Enums.BufferStatus
+    operation_id?: UuidNullableFilter<"Event"> | string | null
   }
 
   export type MessageUpsertWithWhereUniqueWithoutFrom_chain_relInput = {
@@ -12165,6 +12351,7 @@ export namespace Prisma {
     correlation_window_id?: string | null
     buffer_status: $Enums.BufferStatus
     chain: ChainCreateNestedOneWithoutEventsInput
+    operation?: OperationCreateNestedOneWithoutEventsInput
   }
 
   export type EventUncheckedCreateWithoutTransactionInput = {
@@ -12176,6 +12363,7 @@ export namespace Prisma {
     params: JsonNullValueInput | InputJsonValue
     correlation_window_id?: string | null
     buffer_status: $Enums.BufferStatus
+    operation_id?: string | null
   }
 
   export type EventCreateOrConnectWithoutTransactionInput = {
@@ -12274,6 +12462,7 @@ export namespace Prisma {
     to_chain_rel: ChainCreateNestedOneWithoutOperations_toInput
     message?: MessageCreateNestedOneWithoutOperationsInput
     end_transaction?: TransactionCreateNestedOneWithoutOperations_endInput
+    events?: EventCreateNestedManyWithoutOperationInput
   }
 
   export type OperationUncheckedCreateWithoutStart_transactionInput = {
@@ -12294,6 +12483,7 @@ export namespace Prisma {
     last_event_at: Date | string
     next_retry_at?: Date | string | null
     error_context?: NullableJsonNullValueInput | InputJsonValue
+    events?: EventUncheckedCreateNestedManyWithoutOperationInput
   }
 
   export type OperationCreateOrConnectWithoutStart_transactionInput = {
@@ -12324,6 +12514,7 @@ export namespace Prisma {
     to_chain_rel: ChainCreateNestedOneWithoutOperations_toInput
     message?: MessageCreateNestedOneWithoutOperationsInput
     start_transaction: TransactionCreateNestedOneWithoutOperations_startInput
+    events?: EventCreateNestedManyWithoutOperationInput
   }
 
   export type OperationUncheckedCreateWithoutEnd_transactionInput = {
@@ -12344,6 +12535,7 @@ export namespace Prisma {
     last_event_at: Date | string
     next_retry_at?: Date | string | null
     error_context?: NullableJsonNullValueInput | InputJsonValue
+    events?: EventUncheckedCreateNestedManyWithoutOperationInput
   }
 
   export type OperationCreateOrConnectWithoutEnd_transactionInput = {
@@ -12543,6 +12735,53 @@ export namespace Prisma {
     create: XOR<TransactionCreateWithoutEventsInput, TransactionUncheckedCreateWithoutEventsInput>
   }
 
+  export type OperationCreateWithoutEventsInput = {
+    op_id?: string
+    op_type: $Enums.OperationType
+    user_address: string
+    message_nonce?: Decimal | DecimalJsLike | number | string | null
+    status: $Enums.OperationStatus
+    substatus?: string | null
+    details: JsonNullValueInput | InputJsonValue
+    retry_count: number
+    created_at?: Date | string
+    updated_at?: Date | string
+    last_event_at: Date | string
+    next_retry_at?: Date | string | null
+    error_context?: NullableJsonNullValueInput | InputJsonValue
+    from_chain_rel: ChainCreateNestedOneWithoutOperations_fromInput
+    to_chain_rel: ChainCreateNestedOneWithoutOperations_toInput
+    message?: MessageCreateNestedOneWithoutOperationsInput
+    start_transaction: TransactionCreateNestedOneWithoutOperations_startInput
+    end_transaction?: TransactionCreateNestedOneWithoutOperations_endInput
+  }
+
+  export type OperationUncheckedCreateWithoutEventsInput = {
+    op_id?: string
+    op_type: $Enums.OperationType
+    user_address: string
+    from_chain: number
+    to_chain: number
+    message_nonce?: Decimal | DecimalJsLike | number | string | null
+    message_id?: string | null
+    start_tx_id: string
+    end_tx_id?: string | null
+    status: $Enums.OperationStatus
+    substatus?: string | null
+    details: JsonNullValueInput | InputJsonValue
+    retry_count: number
+    created_at?: Date | string
+    updated_at?: Date | string
+    last_event_at: Date | string
+    next_retry_at?: Date | string | null
+    error_context?: NullableJsonNullValueInput | InputJsonValue
+  }
+
+  export type OperationCreateOrConnectWithoutEventsInput = {
+    where: OperationWhereUniqueInput
+    create: XOR<OperationCreateWithoutEventsInput, OperationUncheckedCreateWithoutEventsInput>
+  }
+
   export type ChainUpsertWithoutEventsInput = {
     update: XOR<ChainUpdateWithoutEventsInput, ChainUncheckedUpdateWithoutEventsInput>
     create: XOR<ChainCreateWithoutEventsInput, ChainUncheckedCreateWithoutEventsInput>
@@ -12621,6 +12860,59 @@ export namespace Prisma {
     messages_recv?: MessageUncheckedUpdateManyWithoutRecv_transactionNestedInput
     operations_start?: OperationUncheckedUpdateManyWithoutStart_transactionNestedInput
     operations_end?: OperationUncheckedUpdateManyWithoutEnd_transactionNestedInput
+  }
+
+  export type OperationUpsertWithoutEventsInput = {
+    update: XOR<OperationUpdateWithoutEventsInput, OperationUncheckedUpdateWithoutEventsInput>
+    create: XOR<OperationCreateWithoutEventsInput, OperationUncheckedCreateWithoutEventsInput>
+    where?: OperationWhereInput
+  }
+
+  export type OperationUpdateToOneWithWhereWithoutEventsInput = {
+    where?: OperationWhereInput
+    data: XOR<OperationUpdateWithoutEventsInput, OperationUncheckedUpdateWithoutEventsInput>
+  }
+
+  export type OperationUpdateWithoutEventsInput = {
+    op_id?: StringFieldUpdateOperationsInput | string
+    op_type?: EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
+    user_address?: StringFieldUpdateOperationsInput | string
+    message_nonce?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    status?: EnumOperationStatusFieldUpdateOperationsInput | $Enums.OperationStatus
+    substatus?: NullableStringFieldUpdateOperationsInput | string | null
+    details?: JsonNullValueInput | InputJsonValue
+    retry_count?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    last_event_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    next_retry_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    error_context?: NullableJsonNullValueInput | InputJsonValue
+    from_chain_rel?: ChainUpdateOneRequiredWithoutOperations_fromNestedInput
+    to_chain_rel?: ChainUpdateOneRequiredWithoutOperations_toNestedInput
+    message?: MessageUpdateOneWithoutOperationsNestedInput
+    start_transaction?: TransactionUpdateOneRequiredWithoutOperations_startNestedInput
+    end_transaction?: TransactionUpdateOneWithoutOperations_endNestedInput
+  }
+
+  export type OperationUncheckedUpdateWithoutEventsInput = {
+    op_id?: StringFieldUpdateOperationsInput | string
+    op_type?: EnumOperationTypeFieldUpdateOperationsInput | $Enums.OperationType
+    user_address?: StringFieldUpdateOperationsInput | string
+    from_chain?: IntFieldUpdateOperationsInput | number
+    to_chain?: IntFieldUpdateOperationsInput | number
+    message_nonce?: NullableDecimalFieldUpdateOperationsInput | Decimal | DecimalJsLike | number | string | null
+    message_id?: NullableStringFieldUpdateOperationsInput | string | null
+    start_tx_id?: StringFieldUpdateOperationsInput | string
+    end_tx_id?: NullableStringFieldUpdateOperationsInput | string | null
+    status?: EnumOperationStatusFieldUpdateOperationsInput | $Enums.OperationStatus
+    substatus?: NullableStringFieldUpdateOperationsInput | string | null
+    details?: JsonNullValueInput | InputJsonValue
+    retry_count?: IntFieldUpdateOperationsInput | number
+    created_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    updated_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    last_event_at?: DateTimeFieldUpdateOperationsInput | Date | string
+    next_retry_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
+    error_context?: NullableJsonNullValueInput | InputJsonValue
   }
 
   export type ChainCreateWithoutMessages_fromInput = {
@@ -12777,6 +13069,7 @@ export namespace Prisma {
     to_chain_rel: ChainCreateNestedOneWithoutOperations_toInput
     start_transaction: TransactionCreateNestedOneWithoutOperations_startInput
     end_transaction?: TransactionCreateNestedOneWithoutOperations_endInput
+    events?: EventCreateNestedManyWithoutOperationInput
   }
 
   export type OperationUncheckedCreateWithoutMessageInput = {
@@ -12797,6 +13090,7 @@ export namespace Prisma {
     last_event_at: Date | string
     next_retry_at?: Date | string | null
     error_context?: NullableJsonNullValueInput | InputJsonValue
+    events?: EventUncheckedCreateNestedManyWithoutOperationInput
   }
 
   export type OperationCreateOrConnectWithoutMessageInput = {
@@ -13150,6 +13444,40 @@ export namespace Prisma {
     create: XOR<TransactionCreateWithoutOperations_endInput, TransactionUncheckedCreateWithoutOperations_endInput>
   }
 
+  export type EventCreateWithoutOperationInput = {
+    event_id?: string
+    log_index: number
+    name: string
+    contract_address: string
+    params: JsonNullValueInput | InputJsonValue
+    correlation_window_id?: string | null
+    buffer_status: $Enums.BufferStatus
+    chain: ChainCreateNestedOneWithoutEventsInput
+    transaction: TransactionCreateNestedOneWithoutEventsInput
+  }
+
+  export type EventUncheckedCreateWithoutOperationInput = {
+    event_id?: string
+    chain_id: number
+    tx_hash: string
+    log_index: number
+    name: string
+    contract_address: string
+    params: JsonNullValueInput | InputJsonValue
+    correlation_window_id?: string | null
+    buffer_status: $Enums.BufferStatus
+  }
+
+  export type EventCreateOrConnectWithoutOperationInput = {
+    where: EventWhereUniqueInput
+    create: XOR<EventCreateWithoutOperationInput, EventUncheckedCreateWithoutOperationInput>
+  }
+
+  export type EventCreateManyOperationInputEnvelope = {
+    data: EventCreateManyOperationInput | EventCreateManyOperationInput[]
+    skipDuplicates?: boolean
+  }
+
   export type ChainUpsertWithoutOperations_fromInput = {
     update: XOR<ChainUpdateWithoutOperations_fromInput, ChainUncheckedUpdateWithoutOperations_fromInput>
     create: XOR<ChainCreateWithoutOperations_fromInput, ChainUncheckedCreateWithoutOperations_fromInput>
@@ -13345,6 +13673,22 @@ export namespace Prisma {
     operations_start?: OperationUncheckedUpdateManyWithoutStart_transactionNestedInput
   }
 
+  export type EventUpsertWithWhereUniqueWithoutOperationInput = {
+    where: EventWhereUniqueInput
+    update: XOR<EventUpdateWithoutOperationInput, EventUncheckedUpdateWithoutOperationInput>
+    create: XOR<EventCreateWithoutOperationInput, EventUncheckedCreateWithoutOperationInput>
+  }
+
+  export type EventUpdateWithWhereUniqueWithoutOperationInput = {
+    where: EventWhereUniqueInput
+    data: XOR<EventUpdateWithoutOperationInput, EventUncheckedUpdateWithoutOperationInput>
+  }
+
+  export type EventUpdateManyWithWhereWithoutOperationInput = {
+    where: EventScalarWhereInput
+    data: XOR<EventUpdateManyMutationInput, EventUncheckedUpdateManyWithoutOperationInput>
+  }
+
   export type ContractCreateManyChainInput = {
     address: string
     type: $Enums.ContractType
@@ -13371,6 +13715,7 @@ export namespace Prisma {
     params: JsonNullValueInput | InputJsonValue
     correlation_window_id?: string | null
     buffer_status: $Enums.BufferStatus
+    operation_id?: string | null
   }
 
   export type MessageCreateManyFrom_chain_relInput = {
@@ -13505,6 +13850,7 @@ export namespace Prisma {
     correlation_window_id?: NullableStringFieldUpdateOperationsInput | string | null
     buffer_status?: EnumBufferStatusFieldUpdateOperationsInput | $Enums.BufferStatus
     transaction?: TransactionUpdateOneRequiredWithoutEventsNestedInput
+    operation?: OperationUpdateOneWithoutEventsNestedInput
   }
 
   export type EventUncheckedUpdateWithoutChainInput = {
@@ -13516,6 +13862,7 @@ export namespace Prisma {
     params?: JsonNullValueInput | InputJsonValue
     correlation_window_id?: NullableStringFieldUpdateOperationsInput | string | null
     buffer_status?: EnumBufferStatusFieldUpdateOperationsInput | $Enums.BufferStatus
+    operation_id?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type EventUncheckedUpdateManyWithoutChainInput = {
@@ -13527,6 +13874,7 @@ export namespace Prisma {
     params?: JsonNullValueInput | InputJsonValue
     correlation_window_id?: NullableStringFieldUpdateOperationsInput | string | null
     buffer_status?: EnumBufferStatusFieldUpdateOperationsInput | $Enums.BufferStatus
+    operation_id?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type MessageUpdateWithoutFrom_chain_relInput = {
@@ -13617,6 +13965,7 @@ export namespace Prisma {
     message?: MessageUpdateOneWithoutOperationsNestedInput
     start_transaction?: TransactionUpdateOneRequiredWithoutOperations_startNestedInput
     end_transaction?: TransactionUpdateOneWithoutOperations_endNestedInput
+    events?: EventUpdateManyWithoutOperationNestedInput
   }
 
   export type OperationUncheckedUpdateWithoutFrom_chain_relInput = {
@@ -13637,6 +13986,7 @@ export namespace Prisma {
     last_event_at?: DateTimeFieldUpdateOperationsInput | Date | string
     next_retry_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     error_context?: NullableJsonNullValueInput | InputJsonValue
+    events?: EventUncheckedUpdateManyWithoutOperationNestedInput
   }
 
   export type OperationUncheckedUpdateManyWithoutFrom_chain_relInput = {
@@ -13677,6 +14027,7 @@ export namespace Prisma {
     message?: MessageUpdateOneWithoutOperationsNestedInput
     start_transaction?: TransactionUpdateOneRequiredWithoutOperations_startNestedInput
     end_transaction?: TransactionUpdateOneWithoutOperations_endNestedInput
+    events?: EventUpdateManyWithoutOperationNestedInput
   }
 
   export type OperationUncheckedUpdateWithoutTo_chain_relInput = {
@@ -13697,6 +14048,7 @@ export namespace Prisma {
     last_event_at?: DateTimeFieldUpdateOperationsInput | Date | string
     next_retry_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     error_context?: NullableJsonNullValueInput | InputJsonValue
+    events?: EventUncheckedUpdateManyWithoutOperationNestedInput
   }
 
   export type OperationUncheckedUpdateManyWithoutTo_chain_relInput = {
@@ -13728,6 +14080,7 @@ export namespace Prisma {
     params: JsonNullValueInput | InputJsonValue
     correlation_window_id?: string | null
     buffer_status: $Enums.BufferStatus
+    operation_id?: string | null
   }
 
   export type MessageCreateManySent_transactionInput = {
@@ -13801,6 +14154,7 @@ export namespace Prisma {
     correlation_window_id?: NullableStringFieldUpdateOperationsInput | string | null
     buffer_status?: EnumBufferStatusFieldUpdateOperationsInput | $Enums.BufferStatus
     chain?: ChainUpdateOneRequiredWithoutEventsNestedInput
+    operation?: OperationUpdateOneWithoutEventsNestedInput
   }
 
   export type EventUncheckedUpdateWithoutTransactionInput = {
@@ -13812,6 +14166,7 @@ export namespace Prisma {
     params?: JsonNullValueInput | InputJsonValue
     correlation_window_id?: NullableStringFieldUpdateOperationsInput | string | null
     buffer_status?: EnumBufferStatusFieldUpdateOperationsInput | $Enums.BufferStatus
+    operation_id?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type EventUncheckedUpdateManyWithoutTransactionInput = {
@@ -13823,6 +14178,7 @@ export namespace Prisma {
     params?: JsonNullValueInput | InputJsonValue
     correlation_window_id?: NullableStringFieldUpdateOperationsInput | string | null
     buffer_status?: EnumBufferStatusFieldUpdateOperationsInput | $Enums.BufferStatus
+    operation_id?: NullableStringFieldUpdateOperationsInput | string | null
   }
 
   export type MessageUpdateWithoutSent_transactionInput = {
@@ -13913,6 +14269,7 @@ export namespace Prisma {
     to_chain_rel?: ChainUpdateOneRequiredWithoutOperations_toNestedInput
     message?: MessageUpdateOneWithoutOperationsNestedInput
     end_transaction?: TransactionUpdateOneWithoutOperations_endNestedInput
+    events?: EventUpdateManyWithoutOperationNestedInput
   }
 
   export type OperationUncheckedUpdateWithoutStart_transactionInput = {
@@ -13933,6 +14290,7 @@ export namespace Prisma {
     last_event_at?: DateTimeFieldUpdateOperationsInput | Date | string
     next_retry_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     error_context?: NullableJsonNullValueInput | InputJsonValue
+    events?: EventUncheckedUpdateManyWithoutOperationNestedInput
   }
 
   export type OperationUncheckedUpdateManyWithoutStart_transactionInput = {
@@ -13973,6 +14331,7 @@ export namespace Prisma {
     to_chain_rel?: ChainUpdateOneRequiredWithoutOperations_toNestedInput
     message?: MessageUpdateOneWithoutOperationsNestedInput
     start_transaction?: TransactionUpdateOneRequiredWithoutOperations_startNestedInput
+    events?: EventUpdateManyWithoutOperationNestedInput
   }
 
   export type OperationUncheckedUpdateWithoutEnd_transactionInput = {
@@ -13993,6 +14352,7 @@ export namespace Prisma {
     last_event_at?: DateTimeFieldUpdateOperationsInput | Date | string
     next_retry_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     error_context?: NullableJsonNullValueInput | InputJsonValue
+    events?: EventUncheckedUpdateManyWithoutOperationNestedInput
   }
 
   export type OperationUncheckedUpdateManyWithoutEnd_transactionInput = {
@@ -14053,6 +14413,7 @@ export namespace Prisma {
     to_chain_rel?: ChainUpdateOneRequiredWithoutOperations_toNestedInput
     start_transaction?: TransactionUpdateOneRequiredWithoutOperations_startNestedInput
     end_transaction?: TransactionUpdateOneWithoutOperations_endNestedInput
+    events?: EventUpdateManyWithoutOperationNestedInput
   }
 
   export type OperationUncheckedUpdateWithoutMessageInput = {
@@ -14073,6 +14434,7 @@ export namespace Prisma {
     last_event_at?: DateTimeFieldUpdateOperationsInput | Date | string
     next_retry_at?: NullableDateTimeFieldUpdateOperationsInput | Date | string | null
     error_context?: NullableJsonNullValueInput | InputJsonValue
+    events?: EventUncheckedUpdateManyWithoutOperationNestedInput
   }
 
   export type OperationUncheckedUpdateManyWithoutMessageInput = {
@@ -14095,6 +14457,54 @@ export namespace Prisma {
     error_context?: NullableJsonNullValueInput | InputJsonValue
   }
 
+  export type EventCreateManyOperationInput = {
+    event_id?: string
+    chain_id: number
+    tx_hash: string
+    log_index: number
+    name: string
+    contract_address: string
+    params: JsonNullValueInput | InputJsonValue
+    correlation_window_id?: string | null
+    buffer_status: $Enums.BufferStatus
+  }
+
+  export type EventUpdateWithoutOperationInput = {
+    event_id?: StringFieldUpdateOperationsInput | string
+    log_index?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    contract_address?: StringFieldUpdateOperationsInput | string
+    params?: JsonNullValueInput | InputJsonValue
+    correlation_window_id?: NullableStringFieldUpdateOperationsInput | string | null
+    buffer_status?: EnumBufferStatusFieldUpdateOperationsInput | $Enums.BufferStatus
+    chain?: ChainUpdateOneRequiredWithoutEventsNestedInput
+    transaction?: TransactionUpdateOneRequiredWithoutEventsNestedInput
+  }
+
+  export type EventUncheckedUpdateWithoutOperationInput = {
+    event_id?: StringFieldUpdateOperationsInput | string
+    chain_id?: IntFieldUpdateOperationsInput | number
+    tx_hash?: StringFieldUpdateOperationsInput | string
+    log_index?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    contract_address?: StringFieldUpdateOperationsInput | string
+    params?: JsonNullValueInput | InputJsonValue
+    correlation_window_id?: NullableStringFieldUpdateOperationsInput | string | null
+    buffer_status?: EnumBufferStatusFieldUpdateOperationsInput | $Enums.BufferStatus
+  }
+
+  export type EventUncheckedUpdateManyWithoutOperationInput = {
+    event_id?: StringFieldUpdateOperationsInput | string
+    chain_id?: IntFieldUpdateOperationsInput | number
+    tx_hash?: StringFieldUpdateOperationsInput | string
+    log_index?: IntFieldUpdateOperationsInput | number
+    name?: StringFieldUpdateOperationsInput | string
+    contract_address?: StringFieldUpdateOperationsInput | string
+    params?: JsonNullValueInput | InputJsonValue
+    correlation_window_id?: NullableStringFieldUpdateOperationsInput | string | null
+    buffer_status?: EnumBufferStatusFieldUpdateOperationsInput | $Enums.BufferStatus
+  }
+
 
 
   /**
@@ -14112,6 +14522,10 @@ export namespace Prisma {
      * @deprecated Use MessageCountOutputTypeDefaultArgs instead
      */
     export type MessageCountOutputTypeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = MessageCountOutputTypeDefaultArgs<ExtArgs>
+    /**
+     * @deprecated Use OperationCountOutputTypeDefaultArgs instead
+     */
+    export type OperationCountOutputTypeArgs<ExtArgs extends $Extensions.InternalArgs = $Extensions.DefaultArgs> = OperationCountOutputTypeDefaultArgs<ExtArgs>
     /**
      * @deprecated Use ChainDefaultArgs instead
      */

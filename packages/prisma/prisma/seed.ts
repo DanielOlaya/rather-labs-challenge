@@ -34,7 +34,7 @@ async function ensureTablesExist() {
     
     await prisma.$executeRaw`
       DO $$ BEGIN
-        CREATE TYPE "BufferStatus" AS ENUM ('immediate', 'buffered', 'expired');
+        CREATE TYPE "BufferStatus" AS ENUM ('immediate', 'buffered', 'expired', 'processed');
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
@@ -103,38 +103,6 @@ async function ensureTablesExist() {
         CONSTRAINT "transactions_hash_key" UNIQUE ("hash")
       );
     `
-    
-    await prisma.$executeRaw`
-      CREATE TABLE IF NOT EXISTS "events" (
-        "event_id" UUID NOT NULL DEFAULT gen_random_uuid(),
-        "chain_id" INTEGER NOT NULL,
-        "tx_hash" TEXT NOT NULL,
-        "log_index" INTEGER NOT NULL,
-        "name" TEXT NOT NULL,
-        "contract_address" TEXT NOT NULL,
-        "params" JSONB NOT NULL,
-        "correlation_window_id" UUID,
-        "buffer_status" "BufferStatus" NOT NULL,
-        CONSTRAINT "events_pkey" PRIMARY KEY ("event_id"),
-        CONSTRAINT "events_chain_id_tx_hash_log_index_key" UNIQUE ("chain_id", "tx_hash", "log_index")
-      );
-    `
-    
-    await prisma.$executeRaw`
-      CREATE TABLE IF NOT EXISTS "messages" (
-        "message_id" UUID NOT NULL DEFAULT gen_random_uuid(),
-        "nonce" DECIMAL(65,30) NOT NULL,
-        "from_chain" INTEGER NOT NULL,
-        "to_chain" INTEGER NOT NULL,
-        "sent_tx_id" UUID NOT NULL,
-        "recv_tx_id" UUID,
-        "status" "MessageStatus" NOT NULL,
-        "sent_at" TIMESTAMP(3) NOT NULL,
-        "received_at" TIMESTAMP(3),
-        CONSTRAINT "messages_pkey" PRIMARY KEY ("message_id")
-      );
-    `
-    
     await prisma.$executeRaw`
       CREATE TABLE IF NOT EXISTS "operations" (
         "op_id" UUID NOT NULL DEFAULT gen_random_uuid(),
@@ -159,6 +127,38 @@ async function ensureTablesExist() {
       );
     `
     
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS "events" (
+        "event_id" UUID NOT NULL DEFAULT gen_random_uuid(),
+        "chain_id" INTEGER NOT NULL,
+        "tx_hash" TEXT NOT NULL,
+        "log_index" INTEGER NOT NULL,
+        "name" TEXT NOT NULL,
+        "contract_address" TEXT NOT NULL,
+        "params" JSONB NOT NULL,
+        "correlation_window_id" UUID,
+        "buffer_status" "BufferStatus" NOT NULL,
+        "operation_id" UUID,
+        CONSTRAINT "events_pkey" PRIMARY KEY ("event_id"),
+        CONSTRAINT "events_chain_id_tx_hash_log_index_key" UNIQUE ("chain_id", "tx_hash", "log_index")
+      );
+    `
+    
+    await prisma.$executeRaw`
+      CREATE TABLE IF NOT EXISTS "messages" (
+        "message_id" UUID NOT NULL DEFAULT gen_random_uuid(),
+        "nonce" DECIMAL(65,30) NOT NULL,
+        "from_chain" INTEGER NOT NULL,
+        "to_chain" INTEGER NOT NULL,
+        "sent_tx_id" UUID NOT NULL,
+        "recv_tx_id" UUID,
+        "status" "MessageStatus" NOT NULL,
+        "sent_at" TIMESTAMP(3) NOT NULL,
+        "received_at" TIMESTAMP(3),
+        CONSTRAINT "messages_pkey" PRIMARY KEY ("message_id")
+      );
+    `
+    
     // Create indexes
     console.log('Creating indexes...')
     
@@ -172,6 +172,7 @@ async function ensureTablesExist() {
     await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "events_name_idx" ON "events"("name");`
     await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "events_correlation_window_id_idx" ON "events"("correlation_window_id");`
     await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "events_buffer_status_idx" ON "events"("buffer_status");`
+    await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "events_operation_id_idx" ON "events"("operation_id");`
     await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "messages_nonce_idx" ON "messages"("nonce");`
     await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "messages_from_chain_idx" ON "messages"("from_chain");`
     await prisma.$executeRaw`CREATE INDEX IF NOT EXISTS "messages_to_chain_idx" ON "messages"("to_chain");`
@@ -223,6 +224,15 @@ async function ensureTablesExist() {
       DO $$ BEGIN
         ALTER TABLE "events" ADD CONSTRAINT "events_tx_hash_fkey" 
         FOREIGN KEY ("tx_hash") REFERENCES "transactions"("hash") ON DELETE RESTRICT ON UPDATE CASCADE;
+      EXCEPTION
+        WHEN duplicate_object THEN null;
+      END $$;
+    `
+    
+    await prisma.$executeRaw`
+      DO $$ BEGIN
+        ALTER TABLE "events" ADD CONSTRAINT "events_operation_id_fkey" 
+        FOREIGN KEY ("operation_id") REFERENCES "operations"("op_id") ON DELETE SET NULL ON UPDATE CASCADE;
       EXCEPTION
         WHEN duplicate_object THEN null;
       END $$;
@@ -352,6 +362,15 @@ async function main() {
         last_block_processed: BigInt('48000000'),
         provider_urls: ['https://polygon-mainnet.g.alchemy.com/v2/your-api-key', 'https://polygon-rpc.com/']
       }
+    }),
+    prisma.chain.create({
+      data: {
+        chain_id: 111555111,
+        name: 'Sepolia',
+        status: ChainStatus.active,
+        last_block_processed: BigInt('8983800'),
+        provider_urls: ["https://ethereum-sepolia-rpc.publicnode.com", "wss://sepolia.gateway.tenderly.co", "wss://ethereum-sepolia-rpc.publicnode.com", "https://sepolia.infura.io"]
+      }
     })
   ])
 
@@ -359,44 +378,24 @@ async function main() {
 
   // Seed contracts
   const contracts = await Promise.all([
-    // TODO: replace the actual Ethereum contracts
     prisma.contract.create({
       data: {
-        address: '0x1234567890123456789012345678901234567890',
-        chain_id: 1,
+        address: '0xC100bf5eF82Bfd8873E584176657754F3Ba36E15',
+        chain_id: 111555111,
         type: ContractType.Controller,
-        deployment_block: BigInt('17500000'),
+        deployment_block: BigInt('8983589'),
         abi_hash: 'controller_abi_hash_v1'
       }
     }),
     prisma.contract.create({
       data: {
-        address: '0x2345678901234567890123456789012345678901',
-        chain_id: 1,
+        address: '0xa9d636dab1Ae75EB932d9Ab6D2184971edCaF196',
+        chain_id: 111555111,
         type: ContractType.Router,
-        deployment_block: BigInt('17500001'),
+        deployment_block: BigInt('8983600'),
         abi_hash: 'router_abi_hash_v1'
       }
     }),
-    // TODO: replace the actual Polygon contracts
-    prisma.contract.create({
-      data: {
-        address: '0x3456789012345678901234567890123456789012',
-        chain_id: 137,
-        type: ContractType.Controller,
-        deployment_block: BigInt('47500000'),
-        abi_hash: 'controller_abi_hash_v1'
-      }
-    }),
-    prisma.contract.create({
-      data: {
-        address: '0x4567890123456789012345678901234567890123',
-        chain_id: 137,
-        type: ContractType.Router,
-        deployment_block: BigInt('47500001'),
-        abi_hash: 'router_abi_hash_v1'
-      }
-    })
   ])
 
   console.log(`Created ${contracts.length} contracts`)

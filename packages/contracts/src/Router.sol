@@ -64,12 +64,14 @@ contract Router {
      * @dev Send a cross-chain message
      */
     function sendMessage(
+        uint256 nonce,
         uint256 toChain,
         address recipient,
         bytes calldata data,
         uint8 operationType
     ) external {
-        uint256 nonce = nextNonce++;
+        require(nonce > 0, "Nonce must be greater than 0");
+        
         uint256 operationId = nextOperationId++;
         bytes32 messageId = keccak256(abi.encodePacked(block.chainid, toChain, nonce, msg.sender));
         
@@ -104,13 +106,14 @@ contract Router {
      * @dev Receive a cross-chain message (would be called by relayer/bridge)
      */
     function receiveMessage(
-        uint256 fromChain,
         uint256 nonce,
+        uint256 fromChain,
         address sender,
         address recipient,
         bytes calldata data,
         bytes32 messageId
     ) external {
+        require(nonce > 0, "Nonce must be greater than 0");
         require(!processedMessages[nonce], "Message already processed");
         require(messageNonces[messageId] == nonce, "Invalid message");
         
@@ -190,13 +193,15 @@ contract Router {
      * @dev Simulate cross-chain operation for testing
      */
     function simulateCrossChainOperation(
+        uint256 nonce,
         address user,
         uint256 fromChain,
         uint256 toChain,
         uint8 operationType
     ) external {
+        require(nonce > 0, "Nonce must be greater than 0");
+        
         uint256 operationId = nextOperationId++;
-        uint256 nonce = nextNonce++;
         
         operationOwners[operationId] = user;
         
@@ -214,6 +219,7 @@ contract Router {
         // Send message
         bytes32 messageId = keccak256(abi.encodePacked(fromChain, toChain, nonce, user));
         bytes memory data = abi.encodePacked(operationType, operationId);
+        messageNonces[messageId] = nonce;
         
         emit MessageSent(
             nonce,

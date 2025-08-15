@@ -10,27 +10,81 @@ export interface BaseEvent {
 }
 
 // Cross-chain protocol events
+export interface AddCollateralEvent extends BaseEvent {
+  type: 'AddCollateral';
+  user: string;
+  token: string;
+  amount: string;
+  operationId: string;
+}
+
 export interface CollateralAddedEvent extends BaseEvent {
   type: 'CollateralAdded';
   user: string;
-  asset: string;
-  amount: string; // BigNumber as string
-  collateral_factor: string; // Decimal as string
+  token: string;
+  amount: string;
+  operationId: string;
+}
+
+export interface CollateralRejectedEvent extends BaseEvent {
+  type: 'CollateralRejected';
+  user: string;
+  token: string;
+  amount: string;
+  operationId: string;
+  reason: string;
 }
 
 export interface BorrowEvent extends BaseEvent {
   type: 'Borrow';
   user: string;
-  asset: string;
-  amount: string; // BigNumber as string
-  interest_rate: string; // Decimal as string
+  token: string;
+  amount: string;
+  operationId: string;
+  collateralAmount: string;
+}
+
+export interface BorrowUpdatedEvent extends BaseEvent {
+  type: 'BorrowUpdated';
+  user: string;
+  token: string;
+  amount: string;
+  operationId: string;
+  newCollateralAmount: string;
+}
+
+export interface BorrowRejectedEvent extends BaseEvent {
+  type: 'BorrowRejected';
+  user: string;
+  token: string;
+  amount: string;
+  operationId: string;
+  reason: string;
 }
 
 export interface WithdrawEvent extends BaseEvent {
   type: 'Withdraw';
   user: string;
-  asset: string;
-  amount: string; // BigNumber as string
+  token: string;
+  amount: string;
+  operationId: string;
+}
+
+export interface WithdrawRejectedEvent extends BaseEvent {
+  type: 'WithdrawRejected';
+  user: string;
+  token: string;
+  amount: string;
+  operationId: string;
+  reason: string;
+}
+
+export interface WithdrawnEvent extends BaseEvent {
+  type: 'Withdrawn';
+  user: string;
+  token: string;
+  amount: string;
+  operationId: string;
 }
 
 export interface MessageSentEvent extends BaseEvent {
@@ -67,9 +121,15 @@ export interface OperationCompletedEvent extends BaseEvent {
 
 // Union type for all protocol events
 export type ProtocolEvent =
+  | AddCollateralEvent
   | CollateralAddedEvent
+  | CollateralRejectedEvent
   | BorrowEvent
+  | BorrowUpdatedEvent
+  | BorrowRejectedEvent
   | WithdrawEvent
+  | WithdrawRejectedEvent
+  | WithdrawnEvent
   | MessageSentEvent
   | MessageReceivedEvent
   | OperationStartedEvent
@@ -99,9 +159,15 @@ export type EventHandler<T extends ProtocolEvent = ProtocolEvent> = (
 ) => Promise<void>;
 
 export interface EventHandlerRegistry {
+  AddCollateral: EventHandler<AddCollateralEvent>[];
   CollateralAdded: EventHandler<CollateralAddedEvent>[];
+  CollateralRejected: EventHandler<CollateralRejectedEvent>[];
   Borrow: EventHandler<BorrowEvent>[];
+  BorrowUpdated: EventHandler<BorrowUpdatedEvent>[];
+  BorrowRejected: EventHandler<BorrowRejectedEvent>[];
   Withdraw: EventHandler<WithdrawEvent>[];
+  WithdrawRejected: EventHandler<WithdrawRejectedEvent>[];
+  Withdrawn: EventHandler<WithdrawnEvent>[];
   MessageSent: EventHandler<MessageSentEvent>[];
   MessageReceived: EventHandler<MessageReceivedEvent>[];
   OperationStarted: EventHandler<OperationStartedEvent>[];
@@ -131,8 +197,10 @@ export interface BufferEventJob {
 
 export interface LinkEventJob {
   eventId: string;
-  correlationStrategy: string;
-  correlatedEventIds: string[];
+  operationId: string;
+  strategy: string;
+  correlationStrategy?: string;
+  correlatedEventIds?: string[];
   confidence: number;
 }
 
