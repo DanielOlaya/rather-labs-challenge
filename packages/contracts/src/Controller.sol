@@ -2,6 +2,14 @@
 pragma solidity ^0.8.19;
 
 /**
+ * @title IRouter
+ * @dev Interface for Router contract
+ */
+interface IRouter {
+    function sendMessage(uint256 toChain, address recipient, bytes calldata data, uint8 operationType) external returns (uint256 nonce);
+}
+
+/**
  * @title Controller
  * @dev Main controller contract for cross-chain lending operations
  * Handles collateral management and operation lifecycle
@@ -111,10 +119,21 @@ contract Controller {
     mapping(address => uint256) public userCollateral;
     uint256 public nextOperationId;
     
+    // Router contract reference
+    address public routerContract;
+    
     // Operation types
     uint8 public constant ADD_COLLATERAL = 0;
     uint8 public constant BORROW = 1;
     uint8 public constant WITHDRAW = 2;
+    
+    /**
+     * @dev Constructor
+     */
+    constructor() {
+        routerContract = address(0);
+        nextOperationId = 1;
+    }
     
     /**
      * @dev Add collateral for a user
@@ -123,13 +142,27 @@ contract Controller {
         address token,
         uint256 amount,
         uint256 fromChain,
-        uint256 toChain
+        uint256 toChain,
+        string calldata status
     ) external {
+        _addCollateral(token, amount, fromChain, toChain, status);
+    }
+    
+    /**
+     * @dev Internal add collateral implementation
+     */
+    function _addCollateral(
+        address token,
+        uint256 amount,
+        uint256 fromChain,
+        uint256 toChain,
+        string memory status
+    ) internal {
         require(amount > 0, "Amount must be greater than 0");
         
         uint256 operationId = nextOperationId++;
         
-        // Start the operation
+        // Always start the operation
         emit OperationStarted(
             operationId,
             msg.sender,
@@ -148,14 +181,47 @@ contract Controller {
             block.timestamp
         );
         
-        // Simple validation (in real implementation, would check token validity, etc.)
-        if (amount < 1000) { // Minimum collateral requirement
-            emit CollateralRejected(
+        // Handle based on status
+        if (keccak256(abi.encodePacked(status)) == keccak256(abi.encodePacked("init"))) {
+            // Initial call - validate and send cross-chain message
+            if (amount < 1000) { // Minimum collateral requirement
+                emit CollateralRejected(
+                    msg.sender,
+                    token,
+                    amount,
+                    operationId,
+                    "Insufficient collateral amount",
+                    block.timestamp
+                );
+                
+                emit OperationCompleted(
+                    operationId,
+                    msg.sender,
+                    ADD_COLLATERAL,
+                    false,
+                    block.timestamp
+                );
+                return;
+            }
+            
+            // Send cross-chain message via router
+            if (routerContract != address(0) && fromChain != toChain) {
+                bytes memory messageData = abi.encode(ADD_COLLATERAL, msg.sender, token, amount, operationId);
+                IRouter(routerContract).sendMessage(toChain, address(this), messageData, ADD_COLLATERAL);
+            }
+            
+            // Don't emit OperationCompleted yet - wait for finish status
+            
+        } else if (keccak256(abi.encodePacked(status)) == keccak256(abi.encodePacked("finish"))) {
+            // Final processing - actually add collateral and complete operation
+            userCollateral[msg.sender] += amount;
+            operations[operationId] = true;
+            
+            emit CollateralAdded(
                 msg.sender,
                 token,
                 amount,
                 operationId,
-                "Insufficient collateral amount",
                 block.timestamp
             );
             
@@ -163,96 +229,52 @@ contract Controller {
                 operationId,
                 msg.sender,
                 ADD_COLLATERAL,
-                false,
+                true,
                 block.timestamp
             );
-            return;
         }
-        
-        // Add collateral
-        userCollateral[msg.sender] += amount;
-        operations[operationId] = true;
-        
-        emit CollateralAdded(
-            msg.sender,
-            token,
-            amount,
-            operationId,
-            block.timestamp
-        );
-        
-        emit OperationCompleted(
-            operationId,
-            msg.sender,
-            ADD_COLLATERAL,
-            true,
-            block.timestamp
-        );
     }
     
     /**
-     * @dev Borrow against collateral
+     * @dev Borrow against collateral with status flag
      */
     function borrow(
         address token,
         uint256 amount,
-        uint256 collateralAmount
+        uint256 collateralAmount,
+        uint256 fromChain,
+        uint256 toChain,
+        string calldata status
     ) external {
+        _borrow(token, amount, collateralAmount, fromChain, toChain, status);
+    }
+    
+    /**
+     * @dev Internal borrow implementation
+     */
+    function _borrow(
+        address token,
+        uint256 amount,
+        uint256 collateralAmount,
+        uint256 fromChain,
+        uint256 toChain,
+        string memory status
+    ) internal {
         require(amount > 0, "Amount must be greater than 0");
         
         uint256 operationId = nextOperationId++;
         
+        // Always start the operation
         emit OperationStarted(
             operationId,
             msg.sender,
             BORROW,
-            block.chainid,
-            block.chainid,
+            fromChain,
+            toChain,
             block.timestamp
         );
         
-        // Check collateral requirement
-        if (userCollateral[msg.sender] < collateralAmount) {
-            emit BorrowRejected(
-                msg.sender,
-                token,
-                amount,
-                operationId,
-                "Insufficient collateral",
-                block.timestamp
-            );
-            
-            emit OperationCompleted(
-                operationId,
-                msg.sender,
-                BORROW,
-                false,
-                block.timestamp
-            );
-            return;
-        }
-        
-        // Additional validation (e.g., LTV ratio)
-        if (amount > collateralAmount * 75 / 100) { // 75% LTV max
-            emit BorrowRejected(
-                msg.sender,
-                token,
-                amount,
-                operationId,
-                "Exceeds maximum LTV ratio",
-                block.timestamp
-            );
-            
-            emit OperationCompleted(
-                operationId,
-                msg.sender,
-                BORROW,
-                false,
-                block.timestamp
-            );
-            return;
-        }
-        
+        // Emit borrow intent
         emit Borrow(
             msg.sender,
             token,
@@ -262,13 +284,81 @@ contract Controller {
             block.timestamp
         );
         
-        emit OperationCompleted(
-            operationId,
-            msg.sender,
-            BORROW,
-            true,
-            block.timestamp
-        );
+        // Handle based on status
+        if (keccak256(abi.encodePacked(status)) == keccak256(abi.encodePacked("init"))) {
+            // Initial call - validate and send cross-chain message
+            
+            // Check collateral requirement
+            if (userCollateral[msg.sender] < collateralAmount) {
+                emit BorrowRejected(
+                    msg.sender,
+                    token,
+                    amount,
+                    operationId,
+                    "Insufficient collateral",
+                    block.timestamp
+                );
+                
+                emit OperationCompleted(
+                    operationId,
+                    msg.sender,
+                    BORROW,
+                    false,
+                    block.timestamp
+                );
+                return;
+            }
+            
+            // Additional validation (e.g., LTV ratio)
+            if (amount > collateralAmount * 75 / 100) { // 75% LTV max
+                emit BorrowRejected(
+                    msg.sender,
+                    token,
+                    amount,
+                    operationId,
+                    "Exceeds maximum LTV ratio",
+                    block.timestamp
+                );
+                
+                emit OperationCompleted(
+                    operationId,
+                    msg.sender,
+                    BORROW,
+                    false,
+                    block.timestamp
+                );
+                return;
+            }
+            
+            // Send cross-chain message via router
+            if (routerContract != address(0) && fromChain != toChain) {
+                bytes memory messageData = abi.encode(BORROW, msg.sender, token, amount, operationId);
+                IRouter(routerContract).sendMessage(toChain, address(this), messageData, BORROW);
+            }
+            
+            // Don't emit OperationCompleted yet - wait for finish status
+            
+        } else if (keccak256(abi.encodePacked(status)) == keccak256(abi.encodePacked("finish"))) {
+            // Final processing - complete borrow operation
+            operations[operationId] = true;
+            
+            emit BorrowUpdated(
+                msg.sender,
+                token,
+                amount,
+                operationId,
+                collateralAmount,
+                block.timestamp
+            );
+            
+            emit OperationCompleted(
+                operationId,
+                msg.sender,
+                BORROW,
+                true,
+                block.timestamp
+            );
+        }
     }
     
     /**
@@ -313,22 +403,39 @@ contract Controller {
     }
     
     /**
-     * @dev Withdraw collateral
+     * @dev Withdraw collateral with status flag
      */
     function withdraw(
         address token,
-        uint256 amount
+        uint256 amount,
+        uint256 fromChain,
+        uint256 toChain,
+        string calldata status
     ) external {
+        _withdraw(token, amount, fromChain, toChain, status);
+    }
+    
+    /**
+     * @dev Internal withdraw implementation
+     */
+    function _withdraw(
+        address token,
+        uint256 amount,
+        uint256 fromChain,
+        uint256 toChain,
+        string memory status
+    ) internal {
         require(amount > 0, "Amount must be greater than 0");
         
         uint256 operationId = nextOperationId++;
         
+        // Always start the operation
         emit OperationStarted(
             operationId,
             msg.sender,
             WITHDRAW,
-            block.chainid,
-            block.chainid,
+            fromChain,
+            toChain,
             block.timestamp
         );
         
@@ -341,14 +448,71 @@ contract Controller {
             block.timestamp
         );
         
-        // Check if user has sufficient balance
-        if (userCollateral[msg.sender] < amount) {
-            emit WithdrawRejected(
+        // Handle based on status
+        if (keccak256(abi.encodePacked(status)) == keccak256(abi.encodePacked("init"))) {
+            // Initial call - validate and send cross-chain message
+            
+            // Check if user has sufficient balance
+            if (userCollateral[msg.sender] < amount) {
+                emit WithdrawRejected(
+                    msg.sender,
+                    token,
+                    amount,
+                    operationId,
+                    "Insufficient balance",
+                    block.timestamp
+                );
+                
+                emit OperationCompleted(
+                    operationId,
+                    msg.sender,
+                    WITHDRAW,
+                    false,
+                    block.timestamp
+                );
+                return;
+            }
+            
+            // Additional validation (e.g., ensure withdrawal doesn't break collateral requirements)
+            uint256 remainingCollateral = userCollateral[msg.sender] - amount;
+            if (remainingCollateral < 500) { // Minimum collateral requirement
+                emit WithdrawRejected(
+                    msg.sender,
+                    token,
+                    amount,
+                    operationId,
+                    "Would leave insufficient collateral",
+                    block.timestamp
+                );
+                
+                emit OperationCompleted(
+                    operationId,
+                    msg.sender,
+                    WITHDRAW,
+                    false,
+                    block.timestamp
+                );
+                return;
+            }
+            
+            // Send cross-chain message via router
+            if (routerContract != address(0) && fromChain != toChain) {
+                bytes memory messageData = abi.encode(WITHDRAW, msg.sender, token, amount, operationId);
+                IRouter(routerContract).sendMessage(toChain, address(this), messageData, WITHDRAW);
+            }
+            
+            // Don't emit OperationCompleted yet - wait for finish status
+            
+        } else if (keccak256(abi.encodePacked(status)) == keccak256(abi.encodePacked("finish"))) {
+            // Final processing - actually withdraw collateral and complete operation
+            userCollateral[msg.sender] -= amount;
+            operations[operationId] = true;
+            
+            emit Withdrawn(
                 msg.sender,
                 token,
                 amount,
                 operationId,
-                "Insufficient balance",
                 block.timestamp
             );
             
@@ -356,51 +520,25 @@ contract Controller {
                 operationId,
                 msg.sender,
                 WITHDRAW,
-                false,
+                true,
                 block.timestamp
             );
-            return;
         }
-        
-        // Additional validation (e.g., ensure withdrawal doesn't break collateral requirements)
-        uint256 remainingCollateral = userCollateral[msg.sender] - amount;
-        if (remainingCollateral < 500) { // Minimum collateral requirement
-            emit WithdrawRejected(
-                msg.sender,
-                token,
-                amount,
-                operationId,
-                "Would leave insufficient collateral",
-                block.timestamp
-            );
-            
-            emit OperationCompleted(
-                operationId,
-                msg.sender,
-                WITHDRAW,
-                false,
-                block.timestamp
-            );
-            return;
-        }
-        
-        userCollateral[msg.sender] -= amount;
-        
-        emit Withdrawn(
-            msg.sender,
-            token,
-            amount,
-            operationId,
-            block.timestamp
-        );
-        
-        emit OperationCompleted(
-            operationId,
-            msg.sender,
-            WITHDRAW,
-            true,
-            block.timestamp
-        );
+    }
+    
+    /**
+     * @dev Set the router contract address
+     */
+    function setRouterContract(address _routerContract) external {
+        require(_routerContract != address(0), "Router contract cannot be zero address");
+        routerContract = _routerContract;
+    }
+    
+    /**
+     * @dev Get the current router contract address
+     */
+    function getRouterContract() external view returns (address) {
+        return routerContract;
     }
     
     /**

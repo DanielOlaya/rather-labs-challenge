@@ -2,6 +2,16 @@
 pragma solidity ^0.8.19;
 
 /**
+ * @title IController
+ * @dev Interface for Controller contract
+ */
+interface IController {
+    function addCollateral(address token, uint256 amount, uint256 fromChain, uint256 toChain, string calldata status) external;
+    function borrow(address token, uint256 amount, uint256 collateralAmount, string calldata status) external;
+    function withdraw(address token, uint256 amount, string calldata status) external;
+}
+
+/**
  * @title Router
  * @dev Cross-chain message router for handling cross-chain operations
  * Routes messages between different chains and tracks message lifecycle
@@ -52,8 +62,12 @@ contract Router {
     mapping(uint256 => bool) public processedMessages;
     mapping(bytes32 => uint256) public messageNonces;
     mapping(uint256 => address) public operationOwners;
+    mapping(uint256 => bytes) public messageData;
     uint256 public nextNonce;
     uint256 public nextOperationId;
+    
+    // Controller contract reference
+    address public controllerContract;
     
     // Operation types
     uint8 public constant ADD_COLLATERAL = 0;
@@ -61,23 +75,31 @@ contract Router {
     uint8 public constant WITHDRAW = 2;
     
     /**
-     * @dev Send a cross-chain message
+     * @dev Constructor
+     */
+    constructor() {
+        controllerContract = address(0);
+        nextNonce = 1;
+        nextOperationId = 1;
+    }
+    
+    /**
+     * @dev Send a cross-chain message (internal nonce generation)
      */
     function sendMessage(
-        uint256 nonce,
         uint256 toChain,
         address recipient,
         bytes calldata data,
         uint8 operationType
-    ) external {
-        require(nonce > 0, "Nonce must be greater than 0");
-        
+    ) external returns (uint256 nonce) {
+        nonce = nextNonce++;
         uint256 operationId = nextOperationId++;
         bytes32 messageId = keccak256(abi.encodePacked(block.chainid, toChain, nonce, msg.sender));
         
         // Store message info
         messageNonces[messageId] = nonce;
         operationOwners[operationId] = msg.sender;
+        messageData[nonce] = data;
         
         // Start cross-chain operation
         emit OperationStarted(
@@ -100,6 +122,8 @@ contract Router {
             data,
             block.timestamp
         );
+        
+        return nonce;
     }
     
     /**
@@ -129,7 +153,7 @@ contract Router {
             block.timestamp
         );
         
-        // Process the message and complete operation
+        // Process the message and call controller
         _processMessage(nonce, sender, recipient, data);
     }
     
@@ -142,22 +166,30 @@ contract Router {
         address recipient,
         bytes memory data
     ) internal {
-        // Decode operation type from data (simplified)
-        uint8 operationType = uint8(data[0]);
+        // Decode the message data
+        (uint8 operationType, address user, address token, uint256 amount, uint256 operationId) = 
+            abi.decode(data, (uint8, address, address, uint256, uint256));
         
-        // Find corresponding operation (simplified lookup)
-        uint256 operationId = _findOperationByNonce(nonce);
-        
-        if (operationId != 0) {
-            emit OperationCompleted(
-                operationId,
-                sender,
-                operationType,
-                true, // success
-                nonce,
-                block.timestamp
-            );
+        // Call the appropriate Controller method with "finish" status
+        if (controllerContract != address(0)) {
+            if (operationType == ADD_COLLATERAL) {
+                IController(controllerContract).addCollateral(token, amount, block.chainid, block.chainid, "finish");
+            } else if (operationType == BORROW) {
+                IController(controllerContract).borrow(token, amount, amount, "finish"); // Using amount as collateral for simplicity
+            } else if (operationType == WITHDRAW) {
+                IController(controllerContract).withdraw(token, amount, "finish");
+            }
         }
+        
+        // Emit operation completed
+        emit OperationCompleted(
+            operationId,
+            user,
+            operationType,
+            true, // success
+            nonce,
+            block.timestamp
+        );
     }
     
     /**
@@ -251,6 +283,21 @@ contract Router {
             nonce,
             block.timestamp + 120 // simulate completion after 2 minutes
         );
+    }
+    
+    /**
+     * @dev Set the controller contract address
+     */
+    function setControllerContract(address _controllerContract) external {
+        require(_controllerContract != address(0), "Controller contract cannot be zero address");
+        controllerContract = _controllerContract;
+    }
+    
+    /**
+     * @dev Get the current controller contract address
+     */
+    function getControllerContract() external view returns (address) {
+        return controllerContract;
     }
     
     /**

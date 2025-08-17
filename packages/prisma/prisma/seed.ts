@@ -427,19 +427,19 @@ async function main() {
   const contracts = await Promise.all([
     prisma.contract.create({
       data: {
-        address: '0xC100bf5eF82Bfd8873E584176657754F3Ba36E15',
+        address: '0xF42f7c6Fc78A1573063F90356DE6777dc4e45E2E',
         chain_id: 11155111,
         type: ContractType.Controller,
-        deployment_block: BigInt('8983589'),
+        deployment_block: BigInt('9005036'),
         abi_hash: 'controller_abi_hash_v1'
       }
     }),
     prisma.contract.create({
       data: {
-        address: '0xa9d636dab1Ae75EB932d9Ab6D2184971edCaF196',
+        address: '0x13918C440776A646E3cC49C0C1566151Bd954E74',
         chain_id: 11155111,
         type: ContractType.Router,
-        deployment_block: BigInt('8983600'),
+        deployment_block: BigInt('9004991'),
         abi_hash: 'router_abi_hash_v1'
       }
     }),
