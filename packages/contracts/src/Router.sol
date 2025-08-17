@@ -6,9 +6,9 @@ pragma solidity ^0.8.19;
  * @dev Interface for Controller contract
  */
 interface IController {
-    function addCollateral(address token, uint256 amount, uint256 fromChain, uint256 toChain, string calldata status) external;
-    function borrow(address token, uint256 amount, uint256 collateralAmount, string calldata status) external;
-    function withdraw(address token, uint256 amount, string calldata status) external;
+    function addCollateral(address token, uint256 amount, uint256 fromChain, uint256 toChain, uint256 status) external;
+    function borrow(address token, uint256 amount, uint256 collateralAmount, uint256 status) external;
+    function withdraw(address token, uint256 amount, uint256 status) external;
 }
 
 /**
@@ -36,25 +36,6 @@ contract Router {
         uint256 toChain,
         bytes32 messageId,
         bytes data,
-        uint256 timestamp
-    );
-    
-    event OperationStarted(
-        uint256 indexed operationId,
-        address indexed user,
-        uint8 operationType,
-        uint256 fromChain,
-        uint256 toChain,
-        uint256 nonce,
-        uint256 timestamp
-    );
-    
-    event OperationCompleted(
-        uint256 indexed operationId,
-        address indexed user,
-        uint8 operationType,
-        bool success,
-        uint256 nonce,
         uint256 timestamp
     );
     
@@ -100,17 +81,6 @@ contract Router {
         messageNonces[messageId] = nonce;
         operationOwners[operationId] = msg.sender;
         messageData[nonce] = data;
-        
-        // Start cross-chain operation
-        emit OperationStarted(
-            operationId,
-            msg.sender,
-            operationType,
-            block.chainid,
-            toChain,
-            nonce,
-            block.timestamp
-        );
         
         // Send the message
         emit MessageSent(
@@ -170,26 +140,16 @@ contract Router {
         (uint8 operationType, address user, address token, uint256 amount, uint256 operationId) = 
             abi.decode(data, (uint8, address, address, uint256, uint256));
         
-        // Call the appropriate Controller method with "finish" status
+        // Call the appropriate Controller method with 1 status
         if (controllerContract != address(0)) {
             if (operationType == ADD_COLLATERAL) {
-                IController(controllerContract).addCollateral(token, amount, block.chainid, block.chainid, "finish");
+                IController(controllerContract).addCollateral(token, amount, block.chainid, block.chainid, 1);
             } else if (operationType == BORROW) {
-                IController(controllerContract).borrow(token, amount, amount, "finish"); // Using amount as collateral for simplicity
+                IController(controllerContract).borrow(token, amount, amount, 1); // Using amount as collateral for simplicity
             } else if (operationType == WITHDRAW) {
-                IController(controllerContract).withdraw(token, amount, "finish");
+                IController(controllerContract).withdraw(token, amount, 1);
             }
         }
-        
-        // Emit operation completed
-        emit OperationCompleted(
-            operationId,
-            user,
-            operationType,
-            true, // success
-            nonce,
-            block.timestamp
-        );
     }
     
     /**
@@ -199,26 +159,6 @@ contract Router {
         // In a real implementation, you'd have proper mapping/storage
         // For demo purposes, we'll return a mock operation ID
         return nonce + 1000;
-    }
-    
-    /**
-     * @dev Complete a cross-chain operation manually (for testing)
-     */
-    function completeOperation(
-        uint256 operationId,
-        uint8 operationType,
-        bool success
-    ) external {
-        require(operationOwners[operationId] == msg.sender, "Not operation owner");
-        
-        emit OperationCompleted(
-            operationId,
-            msg.sender,
-            operationType,
-            success,
-            0, // no nonce for manual completion
-            block.timestamp
-        );
     }
     
     /**
@@ -236,17 +176,6 @@ contract Router {
         uint256 operationId = nextOperationId++;
         
         operationOwners[operationId] = user;
-        
-        // Start operation
-        emit OperationStarted(
-            operationId,
-            user,
-            operationType,
-            fromChain,
-            toChain,
-            nonce,
-            block.timestamp
-        );
         
         // Send message
         bytes32 messageId = keccak256(abi.encodePacked(fromChain, toChain, nonce, user));
@@ -272,16 +201,6 @@ contract Router {
             messageId,
             data,
             block.timestamp + 60 // simulate 60 second delay
-        );
-        
-        // Complete operation
-        emit OperationCompleted(
-            operationId,
-            user,
-            operationType,
-            true,
-            nonce,
-            block.timestamp + 120 // simulate completion after 2 minutes
         );
     }
     

@@ -143,7 +143,7 @@ contract Controller {
         uint256 amount,
         uint256 fromChain,
         uint256 toChain,
-        string calldata status
+        uint256 status
     ) external {
         _addCollateral(token, amount, fromChain, toChain, status);
     }
@@ -156,7 +156,7 @@ contract Controller {
         uint256 amount,
         uint256 fromChain,
         uint256 toChain,
-        string memory status
+        uint256 status
     ) internal {
         require(amount > 0, "Amount must be greater than 0");
         
@@ -182,7 +182,7 @@ contract Controller {
         );
         
         // Handle based on status
-        if (keccak256(abi.encodePacked(status)) == keccak256(abi.encodePacked("init"))) {
+        if (status == 0) { // 0 = init
             // Initial call - validate and send cross-chain message
             if (amount < 1000) { // Minimum collateral requirement
                 emit CollateralRejected(
@@ -212,7 +212,7 @@ contract Controller {
             
             // Don't emit OperationCompleted yet - wait for finish status
             
-        } else if (keccak256(abi.encodePacked(status)) == keccak256(abi.encodePacked("finish"))) {
+        } else if (status == 1) { // 1 = finish
             // Final processing - actually add collateral and complete operation
             userCollateral[msg.sender] += amount;
             operations[operationId] = true;
@@ -244,7 +244,7 @@ contract Controller {
         uint256 collateralAmount,
         uint256 fromChain,
         uint256 toChain,
-        string calldata status
+        uint256 status
     ) external {
         _borrow(token, amount, collateralAmount, fromChain, toChain, status);
     }
@@ -258,7 +258,7 @@ contract Controller {
         uint256 collateralAmount,
         uint256 fromChain,
         uint256 toChain,
-        string memory status
+        uint256 status
     ) internal {
         require(amount > 0, "Amount must be greater than 0");
         
@@ -285,7 +285,7 @@ contract Controller {
         );
         
         // Handle based on status
-        if (keccak256(abi.encodePacked(status)) == keccak256(abi.encodePacked("init"))) {
+        if (status == 0) { // 0 = init
             // Initial call - validate and send cross-chain message
             
             // Check collateral requirement
@@ -338,7 +338,7 @@ contract Controller {
             
             // Don't emit OperationCompleted yet - wait for finish status
             
-        } else if (keccak256(abi.encodePacked(status)) == keccak256(abi.encodePacked("finish"))) {
+        } else if (status == 1) { // 1 = finish
             // Final processing - complete borrow operation
             operations[operationId] = true;
             
@@ -410,7 +410,7 @@ contract Controller {
         uint256 amount,
         uint256 fromChain,
         uint256 toChain,
-        string calldata status
+        uint256 status
     ) external {
         _withdraw(token, amount, fromChain, toChain, status);
     }
@@ -423,7 +423,7 @@ contract Controller {
         uint256 amount,
         uint256 fromChain,
         uint256 toChain,
-        string memory status
+        uint256 status
     ) internal {
         require(amount > 0, "Amount must be greater than 0");
         
@@ -449,7 +449,7 @@ contract Controller {
         );
         
         // Handle based on status
-        if (keccak256(abi.encodePacked(status)) == keccak256(abi.encodePacked("init"))) {
+        if (status == 0) { // 0 = init
             // Initial call - validate and send cross-chain message
             
             // Check if user has sufficient balance
@@ -503,7 +503,7 @@ contract Controller {
             
             // Don't emit OperationCompleted yet - wait for finish status
             
-        } else if (keccak256(abi.encodePacked(status)) == keccak256(abi.encodePacked("finish"))) {
+        } else if (status == 1) { // 1 = finish
             // Final processing - actually withdraw collateral and complete operation
             userCollateral[msg.sender] -= amount;
             operations[operationId] = true;

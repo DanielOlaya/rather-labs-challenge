@@ -509,9 +509,9 @@
         "type": "uint256"
       },
       {
-        "internalType": "string",
+        "internalType": "uint256",
         "name": "status",
-        "type": "string"
+        "type": "uint256"
       }
     ],
     "name": "addCollateral",
@@ -547,9 +547,9 @@
         "type": "uint256"
       },
       {
-        "internalType": "string",
+        "internalType": "uint256",
         "name": "status",
-        "type": "string"
+        "type": "uint256"
       }
     ],
     "name": "borrow",
@@ -736,9 +736,9 @@
         "type": "uint256"
       },
       {
-        "internalType": "string",
+        "internalType": "uint256",
         "name": "status",
-        "type": "string"
+        "type": "uint256"
       }
     ],
     "name": "withdraw",
