@@ -84,7 +84,7 @@ export class EventIndexerService {
             topics: (log as any).topics as [signature: `0x${string}`, ...args: `0x${string}`[]],
             data: log.data,
           });
-
+          const decodedData = this.serializeDecodedArgs(decoded.args);
           await this.queueService.addRawEventJob({
             chainId,
             txHash: log.transactionHash,
@@ -94,7 +94,7 @@ export class EventIndexerService {
             contractAddress: log.address,
             eventName: decoded.eventName,
             // data: log.data,
-            data: this.serializeDecodedArgs(decoded.args),
+            data: decodedData || log.data,
             topics: ((log as any).topics ?? []) as string[],
             timestamp: new Date(),
           });

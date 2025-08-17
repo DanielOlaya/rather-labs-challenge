@@ -314,14 +314,8 @@ export class StorageService {
           await this.handleMessageReceivedEvent(event);
           break;
         case 'AddCollateral':
-        case 'CollateralAdded':
-        case 'CollateralRejected':
         case 'Borrow':
-        case 'BorrowUpdated':
-        case 'BorrowRejected':
         case 'Withdraw':
-        case 'WithdrawRejected':
-        case 'Withdrawn':
           await this.handleLendingEvent(event);
           break;
         default:
@@ -332,6 +326,12 @@ export class StorageService {
       throw error;
     }
   }
+          // case 'CollateralAdded':
+        // case 'CollateralRejected':
+        // case 'BorrowUpdated':
+        // case 'BorrowRejected':
+        // case 'WithdrawRejected':
+        // case 'Withdrawn':
 
   private async handleOperationStartedEvent(event: Event): Promise<void> {
     this.logger.log(`Operation started event: ${JSON.stringify(event)}`);
@@ -374,6 +374,7 @@ export class StorageService {
   }
 
   private async handleMessageSentEvent(event: Event): Promise<void> {
+    this.logger.log(`Handle Message sent event: ${JSON.stringify(event)}`);
     const params = JSON.parse(event.params as any);
     if (params && params.nonce) {
       const transaction = await this.transactionRepository.findByHash(event.chain_id, event.tx_hash);
@@ -389,6 +390,7 @@ export class StorageService {
   }
 
   private async handleMessageReceivedEvent(event: Event): Promise<void> {
+    this.logger.log(`Handle Message received event: ${JSON.stringify(event)}`);
     const params = JSON.parse(event.params as any);
     if (params && params.nonce) {
       console.log('params.nonce', params.nonce, new Decimal(params.nonce), parseInt(params.nonce));
@@ -401,16 +403,32 @@ export class StorageService {
       
       if (message) {
         // TODO: consolidate operation, change status to completed
-        
+
         await this.updateMessageReceived(message.message_id);
       }
     }
   }
 
   private async handleLendingEvent(event: Event): Promise<void> {
-    // Handle lending protocol specific events
-    // These events might be linked to existing operations or create new ones
     this.logger.debug(`Processed lending event: ${event.name}`);
+    console.log('handleLendingEvent', event);
+    // const params = JSON.parse(event.params as any);
+    // if (params) {
+    //   const operationType = this.parseOperationType(params.operationType || '0');
+    //   const userAddress = params.user || params.userAddress;
+    //   const transaction = await this.transactionRepository.findByHash(event.chain_id, event.tx_hash);
+    //   if (transaction) {
+    //     const operation = await this.storeOperation(
+    //       operationType,
+    //       userAddress,
+    //       Number(params.fromChain) || event.chain_id,
+    //       Number(params.toChain) || event.chain_id,
+    //       transaction.tx_id
+    //     );
+        
+    //     await this.eventRepository.updateOperationId(event.event_id, operation.op_id);
+    //   }
+    // }
   }
 
   // Helper methods for parsing event data
