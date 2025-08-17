@@ -13,12 +13,12 @@ export class MessageRepository {
     });
   }
 
-  async findByNonce(nonce: Decimal, fromChain: number, toChain: number): Promise<Message | null> {
+  async findByNonce(nonce: number, fromChain: number, toChain: number): Promise<Message | null> {
     return this.prisma.message.findFirst({
       where: {
         nonce,
-        from_chain: fromChain,
-        to_chain: toChain,
+        // from_chain: fromChain,
+        // to_chain: toChain,
       },
     });
   }

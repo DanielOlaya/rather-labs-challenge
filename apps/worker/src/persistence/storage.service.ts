@@ -337,7 +337,7 @@ export class StorageService {
     this.logger.log(`Operation started event: ${JSON.stringify(event)}`);
     const params = JSON.parse(event.params as any);
     if (params) {
-      const operationType = this.parseOperationType(params.name || '0');
+      const operationType = this.parseOperationType(params.operationType || '0');
       const userAddress = params.user || params.userAddress;
       const transaction = await this.transactionRepository.findByHash(event.chain_id, event.tx_hash);
       if (transaction) {
@@ -351,8 +351,6 @@ export class StorageService {
         
         await this.eventRepository.updateOperationId(event.event_id, operation.op_id);
       }
-      // if (userAddress) {
-      // }
     }
   }
 
@@ -376,15 +374,14 @@ export class StorageService {
   }
 
   private async handleMessageSentEvent(event: Event): Promise<void> {
-    // Extract message details from event params
-    const params = event.params as any;
+    const params = JSON.parse(event.params as any);
     if (params && params.nonce) {
       const transaction = await this.transactionRepository.findByHash(event.chain_id, event.tx_hash);
       if (transaction) {
         await this.storeMessage(
           parseInt(params.nonce),
-          params.fromChain || event.chain_id,
-          params.toChain || event.chain_id,
+          parseInt(params.fromChain) || event.chain_id,
+          parseInt(params.toChain) || event.chain_id,
           transaction.tx_id
         );
       }
@@ -392,17 +389,19 @@ export class StorageService {
   }
 
   private async handleMessageReceivedEvent(event: Event): Promise<void> {
-    // Find and update message status when received
-    const params = event.params as any;
+    const params = JSON.parse(event.params as any);
     if (params && params.nonce) {
-      // Find message by nonce and chain information
+      console.log('params.nonce', params.nonce, new Decimal(params.nonce), parseInt(params.nonce));
       const message = await this.messageRepository.findByNonce(
-        new Decimal(params.nonce),
-        params.fromChain || event.chain_id,
-        params.toChain || event.chain_id
+        parseInt(params.nonce),
+        // TODO: for a real multi-chain system
+        parseInt(params.fromChain) || event.chain_id,
+        parseInt(params.toChain) || event.chain_id
       );
       
       if (message) {
+        // TODO: consolidate operation, change status to completed
+        
         await this.updateMessageReceived(message.message_id);
       }
     }
