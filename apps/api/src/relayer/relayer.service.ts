@@ -1,6 +1,7 @@
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '../config/config.service';
-import { ethers } from 'ethers';
+import { ethers, AbiCoder } from 'ethers';
+import { RouterABI } from 'contracts';
 
 export interface RelayerMessage {
   nonce: number;
@@ -14,15 +15,16 @@ export interface RelayerMessage {
 @Injectable()
 export class RelayerService {
   private readonly logger = new Logger(RelayerService.name);
-  private readonly routerAbi = [
-    'function receiveMessage(uint256 nonce, uint256 fromChain, address sender, address recipient, bytes calldata data, bytes32 messageId)'
-  ];
+  private readonly routerAbi = RouterABI;
 
   constructor(private readonly configService: ConfigService) {}
 
   async relayMessage(message: RelayerMessage, targetChainId: number): Promise<string> {
     try {
       this.logger.log(`Relaying message ${message.messageId} to chain ${targetChainId}`);
+      
+      // TODO: remove this for real crosschain relaying lol
+      targetChainId = 11155111;
       
       const chainsConfig = this.configService.chainsConfig;
       const targetChain = chainsConfig[targetChainId];
@@ -71,14 +73,14 @@ export class RelayerService {
         txParams.data,
         txParams.messageId,
         {
-          gasLimit: (gasEstimate * 120n) / 100n // Add 20% buffer
+          gasLimit: (gasEstimate * 110n) / 100n // Add 10% buffer
         }
       );
 
       this.logger.log(`Transaction sent: ${tx.hash}`);
       
-      const receipt = await tx.wait();
-      this.logger.log(`Transaction confirmed in block ${receipt.blockNumber}`);
+      // const receipt = await tx.wait();
+      // this.logger.log(`Transaction confirmed in block ${receipt.blockNumber}`);
       
       return tx.hash;
     } catch (error) {
