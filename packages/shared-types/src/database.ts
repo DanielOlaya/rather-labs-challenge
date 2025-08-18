@@ -35,11 +35,13 @@ export type OperationWithRelations = Prisma.OperationGetPayload<{
     start_transaction: {
       include: {
         chain: true;
+        events: true;
       };
     };
     end_transaction: {
       include: {
         chain: true;
+        events: true;
       };
     };
     message: {

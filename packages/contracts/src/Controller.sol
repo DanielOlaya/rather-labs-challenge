@@ -162,16 +162,6 @@ contract Controller {
         
         uint256 operationId = nextOperationId++;
         
-        // // Always start the operation
-        // emit OperationStarted(
-        //     operationId,
-        //     msg.sender,
-        //     ADD_COLLATERAL,
-        //     fromChain,
-        //     toChain,
-        //     block.timestamp
-        // );
-        
         // Emit add collateral intent
         emit AddCollateral(
             msg.sender,
@@ -214,6 +204,8 @@ contract Controller {
                 );
                 return;
             }
+
+            userCollateral[msg.sender] += amount;
             
             // Send cross-chain message via router
             if (routerContract != address(0) && fromChain != toChain) {
@@ -225,7 +217,7 @@ contract Controller {
             
         } else if (status == 1) { // 1 = finish
             // Final processing - actually add collateral and complete operation
-            userCollateral[msg.sender] += amount;
+            userCollateral[msg.sender] -= amount;
             operations[operationId] = true;
             
             emit CollateralAdded(
@@ -274,16 +266,7 @@ contract Controller {
         require(amount > 0, "Amount must be greater than 0");
         
         uint256 operationId = nextOperationId++;
-        
-        // // Always start the operation
-        // emit OperationStarted(
-        //     operationId,
-        //     msg.sender,
-        //     BORROW,
-        //     fromChain,
-        //     toChain,
-        //     block.timestamp
-        // );
+
         
         // Emit borrow intent
         emit Borrow(
@@ -331,7 +314,7 @@ contract Controller {
             }
             
             // Additional validation (e.g., LTV ratio)
-            if (amount > collateralAmount * 75 / 100) { // 75% LTV max
+            if (amount > collateralAmount) {
                 emit BorrowRejected(
                     msg.sender,
                     token,
@@ -449,16 +432,6 @@ contract Controller {
         require(amount > 0, "Amount must be greater than 0");
         
         uint256 operationId = nextOperationId++;
-        
-        // // Always start the operation
-        // emit OperationStarted(
-        //     operationId,
-        //     msg.sender,
-        //     WITHDRAW,
-        //     fromChain,
-        //     toChain,
-        //     block.timestamp
-        // );
         
         // Emit withdraw intent
         emit Withdraw(
