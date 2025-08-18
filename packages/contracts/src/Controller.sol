@@ -162,15 +162,15 @@ contract Controller {
         
         uint256 operationId = nextOperationId++;
         
-        // Always start the operation
-        emit OperationStarted(
-            operationId,
-            msg.sender,
-            ADD_COLLATERAL,
-            fromChain,
-            toChain,
-            block.timestamp
-        );
+        // // Always start the operation
+        // emit OperationStarted(
+        //     operationId,
+        //     msg.sender,
+        //     ADD_COLLATERAL,
+        //     fromChain,
+        //     toChain,
+        //     block.timestamp
+        // );
         
         // Emit add collateral intent
         emit AddCollateral(
@@ -183,6 +183,17 @@ contract Controller {
         
         // Handle based on status
         if (status == 0) { // 0 = init
+
+            // Always start the operation
+            emit OperationStarted(
+                operationId,
+                msg.sender,
+                ADD_COLLATERAL,
+                fromChain,
+                toChain,
+                block.timestamp
+            );
+        
             // Initial call - validate and send cross-chain message
             if (amount < 1000) { // Minimum collateral requirement
                 emit CollateralRejected(
@@ -264,15 +275,15 @@ contract Controller {
         
         uint256 operationId = nextOperationId++;
         
-        // Always start the operation
-        emit OperationStarted(
-            operationId,
-            msg.sender,
-            BORROW,
-            fromChain,
-            toChain,
-            block.timestamp
-        );
+        // // Always start the operation
+        // emit OperationStarted(
+        //     operationId,
+        //     msg.sender,
+        //     BORROW,
+        //     fromChain,
+        //     toChain,
+        //     block.timestamp
+        // );
         
         // Emit borrow intent
         emit Borrow(
@@ -287,6 +298,16 @@ contract Controller {
         // Handle based on status
         if (status == 0) { // 0 = init
             // Initial call - validate and send cross-chain message
+
+             // Always start the operation
+            emit OperationStarted(
+                operationId,
+                msg.sender,
+                BORROW,
+                fromChain,
+                toChain,
+                block.timestamp
+            );
             
             // Check collateral requirement
             if (userCollateral[msg.sender] < collateralAmount) {
@@ -429,15 +450,15 @@ contract Controller {
         
         uint256 operationId = nextOperationId++;
         
-        // Always start the operation
-        emit OperationStarted(
-            operationId,
-            msg.sender,
-            WITHDRAW,
-            fromChain,
-            toChain,
-            block.timestamp
-        );
+        // // Always start the operation
+        // emit OperationStarted(
+        //     operationId,
+        //     msg.sender,
+        //     WITHDRAW,
+        //     fromChain,
+        //     toChain,
+        //     block.timestamp
+        // );
         
         // Emit withdraw intent
         emit Withdraw(
@@ -451,6 +472,16 @@ contract Controller {
         // Handle based on status
         if (status == 0) { // 0 = init
             // Initial call - validate and send cross-chain message
+
+            // Always start the operation
+            emit OperationStarted(
+                operationId,
+                msg.sender,
+                WITHDRAW,
+                fromChain,
+                toChain,
+                block.timestamp
+            );
             
             // Check if user has sufficient balance
             if (userCollateral[msg.sender] < amount) {
