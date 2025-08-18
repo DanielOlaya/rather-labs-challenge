@@ -19,6 +19,7 @@ export class OperationConsolidateProcessor extends WorkerHost {
   async process(job: Job<ConsolidateOperationJob>): Promise<void> {
     const { data } = job;
     this.logger.debug(`Processing consolidate operation job for operation ${data.operationId}`);
+    console.log('data', JSON.stringify(data));
 
     try {
       // Consolidate the operation - update status and finalize

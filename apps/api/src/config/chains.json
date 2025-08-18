@@ -1,0 +1,13 @@
+{
+  "11155111": {
+    "name": "Sepolia",
+    "finality_depth": 12,
+    "sla_threshold_minutes": 30,
+    "rpcUrls": [
+      "https://ethereum-sepolia-rpc.publicnode.com",
+      "wss://sepolia.gateway.tenderly.co",
+      "wss://ethereum-sepolia-rpc.publicnode.com",
+      "https://sepolia.infura.io"
+    ]
+  }
+}

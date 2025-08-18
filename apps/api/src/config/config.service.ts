@@ -45,10 +45,13 @@ export class ConfigService {
   }
 
   get chainsConfig(): Record<number, ChainConfig> {
-    const configPath = this.nestConfigService.get<string>('CHAINS_CONFIG_PATH', './config/chains.json');
+    const configPath = this.nestConfigService.get<string>('CHAINS_CONFIG_PATH', '../../config/chains.json');
     try {
       const fs = require('fs');
-      const chainsData = fs.readFileSync(configPath, 'utf8');
+      const path = require('path');
+      const projectRoot = path.resolve(__dirname, '../../../..');
+      const absolutePath = path.join(projectRoot, 'config', 'chains.json');
+      const chainsData = fs.readFileSync(absolutePath, 'utf8');
       return JSON.parse(chainsData);
     } catch (error) {
       throw new Error(`Failed to load chains configuration from ${configPath}: ${error.message}`);
@@ -56,10 +59,13 @@ export class ConfigService {
   }
 
   get contractAddresses(): Record<number, Record<string, string>> {
-    const configPath = this.nestConfigService.get<string>('CONTRACTS_CONFIG_PATH', './config/contracts.json');
+    const configPath = this.nestConfigService.get<string>('CONTRACTS_CONFIG_PATH', '../../config/contracts.json');
     try {
       const fs = require('fs');
-      const contractsData = fs.readFileSync(configPath, 'utf8');
+      const path = require('path');
+      const projectRoot = path.resolve(__dirname, '../../../..');
+      const absolutePath = path.join(projectRoot, 'config', 'contracts.json');
+      const contractsData = fs.readFileSync(absolutePath, 'utf8');
       return JSON.parse(contractsData);
     } catch (error) {
       throw new Error(`Failed to load contracts configuration from ${configPath}: ${error.message}`);
@@ -76,5 +82,9 @@ export class ConfigService {
 
   get isProduction(): boolean {
     return this.environment === 'production';
+  }
+
+  get routerAddress(): string {
+    return this.nestConfigService.get<string>('ROUTER_ADDRESS', '0xdea7093551794756A36f85EacD0Bb24c24F0daDe');
   }
 }

@@ -37,7 +37,7 @@ export class OperationsService {
   async getOperations(queryDto: OperationQueryDto) {
     const filters: OperationFilters = {};
     const pagination: PaginationOptions = {
-      limit: queryDto.limit || 20,
+      limit: Number(queryDto.limit) || 20,
       cursor: queryDto.cursor,
     };
 

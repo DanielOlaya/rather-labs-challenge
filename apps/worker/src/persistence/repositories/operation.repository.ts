@@ -138,6 +138,7 @@ export class OperationRepository {
   }
 
   async update(opId: string, data: Prisma.OperationUpdateInput): Promise<Operation> {
+    console.log('update operation', opId, data);
     return this.prisma.operation.update({
       where: { op_id: opId },
       data: {

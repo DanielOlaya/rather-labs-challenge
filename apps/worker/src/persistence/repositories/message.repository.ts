@@ -112,9 +112,25 @@ export class MessageRepository {
     return this.prisma.message.update({
       where: { message_id: messageId },
       data: { 
+        recv_tx_id: receiveTxHash,
         received_at: new Date(),
-        // Note: You might need to add receive_tx_hash field to schema if needed
       },
+    });
+  }
+
+  async updateMessageReceived(messageId: string, status: MessageStatus, recvTxId?: string): Promise<Message> {
+    const updateData: Prisma.MessageUpdateInput = {
+      status,
+      received_at: new Date(),
+    };
+    
+    if (recvTxId) {
+      updateData.recv_transaction = { connect: { tx_id: recvTxId } };
+    }
+    
+    return this.prisma.message.update({
+      where: { message_id: messageId },
+      data: updateData,
     });
   }
 

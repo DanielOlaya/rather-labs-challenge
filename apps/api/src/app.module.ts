@@ -6,6 +6,7 @@ import { PersistenceModule } from './persistence/persistence.module';
 import { QueueModule } from './queue/queue.module';
 import { HealthModule } from './health/health.module';
 import { OperationsModule } from './operations/operations.module';
+import { RelayerModule } from './relayer/relayer.module';
 
 @Module({
   imports: [
@@ -14,6 +15,7 @@ import { OperationsModule } from './operations/operations.module';
     QueueModule,
     HealthModule,
     OperationsModule,
+    RelayerModule,
   ],
   controllers: [AppController],
   providers: [AppService],
