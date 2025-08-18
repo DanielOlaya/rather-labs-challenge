@@ -24,6 +24,7 @@ import {
   Prisma 
 } from 'prisma';
 import { Decimal } from 'decimal.js';
+import { tryCatch } from 'bullmq';
 
 @Injectable()
 export class StorageService {
@@ -220,20 +221,50 @@ export class StorageService {
 
   async consolidateOperation(jobData: ConsolidateOperationJob): Promise<Operation> {
     this.logger.debug(`Consolidating operation ${jobData.operationId}`);
-    console.log('consolidate operation', jobData);
 
     try {
       const operation = await this.operationRepository.findById(jobData.operationId);
       if (!operation) {
         throw new Error(`Operation ${jobData.operationId} not found`);
       }
-      // const event = await this.eventRepository.findById(jobData.eventIds[0]);
-      // const nonce = JSON.parse(event?.params as any)?.nonce;
+
+      let nonce = 0;
+      let messageId;
+      let messageEventParams;
+      let endOperation = false;
+
+      if (operation.end_transaction?.events) {
+        messageEventParams = this.findMessageEventParamsFromOperationEvents(operation.end_transaction?.events);
+        endOperation = true;
+      }
+      else if (operation.start_transaction?.events) {
+        messageEventParams = this.findMessageEventParamsFromOperationEvents(operation.start_transaction?.events);
+      }
+
+      if (messageEventParams && messageEventParams.nonce) {
+        nonce = parseInt(messageEventParams.nonce) || 0;
+      }
+
+      if (nonce !== 0) {
+        const message = await this.messageRepository.findByNonce(
+          nonce,
+          operation.from_chain_rel.chain_id,
+          operation.to_chain_rel.chain_id
+        );
+        if (message && message.message_id) {
+          messageId = message.message_id;
+        }
+      }
+
       const status = jobData.triggerEvent?.includes('Completed') ? OperationStatus.completed : OperationStatus.ongoing;
-      
       const updatedOperation = await this.operationRepository.update(jobData.operationId, {
         status: status,
-        // message_nonce: parseInt(nonce),
+        message_nonce: nonce === 0 ? undefined : nonce,
+        message: messageId ? { connect: { message_id: messageId } } : undefined,
+        end_transaction: endOperation ? { 
+          connect: { 
+            tx_id: jobData.triggerEvent?.includes('Completed') ? operation.end_transaction?.tx_id : undefined } 
+          } : undefined,
         last_event_at: new Date(),
         details: {
           ...((operation.details as any) || {}),
@@ -243,6 +274,19 @@ export class StorageService {
       });
       // update event with operation id
       await this.eventRepository.updateOperationId(jobData.eventIds[0], jobData.operationId);
+
+      if (status === OperationStatus.ongoing && messageEventParams) {
+        const sendMessagePayload = {
+          nonce: nonce,
+          fromChain: parseInt(messageEventParams?.fromChain),
+          sender: messageEventParams?.sender,
+          receiver: messageEventParams?.sender,
+          messageId: messageEventParams?.messageId,
+          data: messageEventParams?.data
+        }
+        console.log('sendMessagePayload', sendMessagePayload);
+        // await this.sendMessage(sendMessagePayload);
+      }
 
       this.logger.log(`Consolidated operation ${jobData.operationId} with status ${updatedOperation.status}`);
       return updatedOperation;
@@ -408,7 +452,7 @@ export class StorageService {
     }
   }
 
-  //{"event_id":"14e750c1-3954-42b2-b725-9c6f7765e9a3","chain_id":11155111,"tx_hash":"0x03a83ea2a5d66807c6ce4da026d500509c771b5e7040044c3543874cc2917994","log_index":15,"name":"MessageSent","contract_address":"0xdea7093551794756a36f85eacd0bb24c24f0dade","params":"{\"nonce\":\"13\",\"sender\":\"0x1850D5AD860546EF99e58BdF02B84205Fc9085C7\",\"fromChain\":\"11155111\",\"toChain\":\"1\",\"messageId\":\"0xaa12effa1156912eb5593464a7f7eb5dd6a6c3c04f892ba7bb2c06ceb46e15e1\",\"data\":\"0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000028766d88c4b61bc58ae012b12aaf9fa2197df35e000000000000000000000000d74959d45ca2b137e9e453aca1b15fd89029566d0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000e\",\"timestamp\":\"1755484836\"}","correlation_window_id":null,"buffer_status":"buffered","operation_id":null}
+  //{"event_id":"14e750c1-3954-42b2-b725-9c6f7765e9a3","chain_id":11155111,"tx_hash":"0x03a83ea2a5d66807c6ce4da026d500509c771b5e7040044c3543874cc2917994","log_index":15,"name":"MessageSent","contract_address":"0xdea7093551794756a36f85eacd0bb24c24f0dade","params":"{\"nonce\":\"13\",\"sender\":\"0x85e303bCC57b603C4329E2d6c304565d3B0c27fe\",\"fromChain\":\"11155111\",\"toChain\":\"1\",\"messageId\":\"0xaa12effa1156912eb5593464a7f7eb5dd6a6c3c04f892ba7bb2c06ceb46e15e1\",\"data\":\"0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000028766d88c4b61bc58ae012b12aaf9fa2197df35e000000000000000000000000d74959d45ca2b137e9e453aca1b15fd89029566d0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000e\",\"timestamp\":\"1755484836\"}","correlation_window_id":null,"buffer_status":"buffered","operation_id":null}
 
   private async handleMessageSentEvent(event: Event): Promise<void> {
     this.logger.log(`Handle Message sent event: ${JSON.stringify(event)}`);
@@ -507,6 +551,20 @@ export class StorageService {
     if (typeof success === 'boolean') return success;
     if (typeof success === 'string') return success === 'true' || success === '1';
     return Boolean(success);
+  }
+
+  private findMessageEventParamsFromOperationEvents(events: Event[]): any {
+    try {
+      for (const event of events) {
+        if (event.name === 'MessageSent') {
+          return JSON.parse(event.params as any);
+        }
+      }
+      return null;
+    } catch (error) {
+      this.logger.error(`Failed to find event params from operation events: ${error.message}`, error.stack);
+      return null;
+    }
   }
   
   private async consolidateOperationFromMessage(message: Message, event: Event): Promise<void> {

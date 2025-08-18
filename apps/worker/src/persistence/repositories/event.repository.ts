@@ -61,6 +61,7 @@ export class EventRepository {
   }
 
   async updateOperationId(eventId: string, operationId: string): Promise<Event> {
+    console.log('Updating operation id for event', eventId, 'to', operationId);
     return this.prisma.event.update({
       where: { event_id: eventId },
       data: { operation_id: operationId },
