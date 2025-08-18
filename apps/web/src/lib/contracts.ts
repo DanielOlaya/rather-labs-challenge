@@ -1,7 +1,8 @@
 // Contract addresses for each supported chain
+// TODO: get this contracts from the JSON file  
 export const CONTRACT_ADDRESSES = {
   11155111: { // Sepolia
-    controller: '0x1850D5AD860546EF99e58BdF02B84205Fc9085C7',
+    controller: '0x85e303bCC57b603C4329E2d6c304565d3B0c27fe',
     router: '0xdea7093551794756A36f85EacD0Bb24c24F0daDe'
   },
   // Add other chains as they get deployed
