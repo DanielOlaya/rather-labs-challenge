@@ -7,8 +7,10 @@ import { EventRepository } from './repositories/event.repository';
 import { MessageRepository } from './repositories/message.repository';
 import { OperationRepository } from './repositories/operation.repository';
 import { StorageService } from './storage.service';
+import { ConfigModule } from '../config/config.module';
 
 @Module({
+  imports: [ConfigModule],
   providers: [
     PrismaService,
     ChainRepository,

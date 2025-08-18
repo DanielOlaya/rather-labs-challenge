@@ -24,7 +24,8 @@ import {
   Prisma 
 } from 'prisma';
 import { Decimal } from 'decimal.js';
-import { tryCatch } from 'bullmq';
+import { ConfigService } from '../config/config.service';
+import axios from 'axios';
 
 @Injectable()
 export class StorageService {
@@ -37,6 +38,7 @@ export class StorageService {
     private operationRepository: OperationRepository,
     private contractRepository: ContractRepository,
     private chainRepository: ChainRepository,
+    private configService: ConfigService,
   ) {}
 
   async storeRawEvent(jobData: RawEventJob): Promise<Event> {
@@ -272,7 +274,7 @@ export class StorageService {
           triggerEvent: jobData.triggerEvent
         }
       });
-      // update event with operation id
+      
       await this.eventRepository.updateOperationId(jobData.eventIds[0], jobData.operationId);
 
       if (status === OperationStatus.ongoing && messageEventParams) {
@@ -280,12 +282,12 @@ export class StorageService {
           nonce: nonce,
           fromChain: parseInt(messageEventParams?.fromChain),
           sender: messageEventParams?.sender,
-          receiver: messageEventParams?.sender,
+          recipient: messageEventParams?.sender,
           messageId: messageEventParams?.messageId,
           data: messageEventParams?.data
         }
-        console.log('sendMessagePayload', sendMessagePayload);
-        // await this.sendMessage(sendMessagePayload);
+        this.logger.log(`Sending message to relayer: ${JSON.stringify(sendMessagePayload)}`);
+        await this.callRelayerAPI(sendMessagePayload, parseInt(messageEventParams?.toChain));
       }
 
       this.logger.log(`Consolidated operation ${jobData.operationId} with status ${updatedOperation.status}`);
@@ -364,6 +366,26 @@ export class StorageService {
     }
   }
 
+  private async callRelayerAPI(operation: any, targetChainId: number = 1): Promise<void> {
+    try {
+      const apiUrl = this.configService.apiUrl;
+      const URL = `${apiUrl}/relayer/relay/${targetChainId}`;
+      
+      this.logger.log(`Calling relayer API at ${URL}, params: ${JSON.stringify(operation)}`);
+      
+      const response = await axios.post(URL, operation, {
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        timeout: 90000, // 90 second timeout
+      });
+      
+      this.logger.log(`Relayer API call successful: ${response.status} - ${response.data?.transactionHash || 'No transaction hash'}`);
+    } catch (error) {
+      this.logger.error(`Failed to call relayer API: ${error.message}`, error.stack);
+    }
+  }
+
   async parseAndStoreEventData(event: Event): Promise<void> {
     this.logger.debug(`Parsing event data for ${event.name}`);
 
@@ -400,12 +422,6 @@ export class StorageService {
       throw error;
     }
   }
-          // case 'CollateralAdded':
-        // case 'CollateralRejected':
-        // case 'BorrowUpdated':
-        // case 'BorrowRejected':
-        // case 'WithdrawRejected':
-        // case 'Withdrawn':
 
   private async handleOperationStartedEvent(event: Event): Promise<void> {
     this.logger.log(`Operation started event: ${JSON.stringify(event)}`);
@@ -452,7 +468,7 @@ export class StorageService {
     }
   }
 
-  //{"event_id":"14e750c1-3954-42b2-b725-9c6f7765e9a3","chain_id":11155111,"tx_hash":"0x03a83ea2a5d66807c6ce4da026d500509c771b5e7040044c3543874cc2917994","log_index":15,"name":"MessageSent","contract_address":"0xdea7093551794756a36f85eacd0bb24c24f0dade","params":"{\"nonce\":\"13\",\"sender\":\"0x85e303bCC57b603C4329E2d6c304565d3B0c27fe\",\"fromChain\":\"11155111\",\"toChain\":\"1\",\"messageId\":\"0xaa12effa1156912eb5593464a7f7eb5dd6a6c3c04f892ba7bb2c06ceb46e15e1\",\"data\":\"0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000028766d88c4b61bc58ae012b12aaf9fa2197df35e000000000000000000000000d74959d45ca2b137e9e453aca1b15fd89029566d0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000e\",\"timestamp\":\"1755484836\"}","correlation_window_id":null,"buffer_status":"buffered","operation_id":null}
+  //{"event_id":"14e750c1-3954-42b2-b725-9c6f7765e9a3","chain_id":11155111,"tx_hash":"0x03a83ea2a5d66807c6ce4da026d500509c771b5e7040044c3543874cc2917994","log_index":15,"name":"MessageSent","contract_address":"0xdea7093551794756a36f85eacd0bb24c24f0dade","params":"{\"nonce\":\"13\",\"sender\":\"0x3c56Ab0a27aaA7E6D11a8f439D79750F1098e15D\",\"fromChain\":\"11155111\",\"toChain\":\"1\",\"messageId\":\"0xaa12effa1156912eb5593464a7f7eb5dd6a6c3c04f892ba7bb2c06ceb46e15e1\",\"data\":\"0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000028766d88c4b61bc58ae012b12aaf9fa2197df35e000000000000000000000000d74959d45ca2b137e9e453aca1b15fd89029566d0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000e\",\"timestamp\":\"1755484836\"}","correlation_window_id":null,"buffer_status":"buffered","operation_id":null}
 
   private async handleMessageSentEvent(event: Event): Promise<void> {
     this.logger.log(`Handle Message sent event: ${JSON.stringify(event)}`);

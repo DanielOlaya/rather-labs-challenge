@@ -76,4 +76,8 @@ export class ConfigService {
   get isProduction(): boolean {
     return this.environment === 'production';
   }
+
+  get apiUrl(): string {
+    return this.nestConfigService.get<string>('API_URL', 'http://localhost:3000');
+  }
 }
