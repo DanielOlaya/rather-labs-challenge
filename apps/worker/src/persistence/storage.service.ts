@@ -95,7 +95,7 @@ export class StorageService {
     this.logger.debug(`Linking event ${jobData.eventId} to operation ${jobData.operationId}`);
 
     try {
-      // Update the event to link it to the operation
+
       this.logger.log(`Event-operation linking noted: ${jobData.eventId} -> ${jobData.operationId} (confidence: ${jobData.confidence})`);
       await this.eventRepository.updateOperationId(jobData.eventId, jobData.operationId);
       
@@ -143,7 +143,6 @@ export class StorageService {
     try {
       let recvTxId: string | undefined;
       
-      // If we have a receive transaction hash, find the transaction to get the tx_id
       if (recvTxHash && toChain) {
           const transaction = await this.transactionRepository.findByHash(toChain, recvTxHash);
           if (transaction) {
@@ -180,21 +179,7 @@ export class StorageService {
     messageNonce?: number,
     messageId?: string
   ): Promise<Operation> {
-    this.logger.debug(`Storing operation of type ${operationType}, data: ${
-      JSON.stringify({
-        op_type: operationType,
-        user_address: userAddress.toLowerCase(),
-        message_nonce: messageNonce,
-        status: OperationStatus.ongoing,
-        details: {},
-        retry_count: 0,
-        last_event_at: new Date(),
-        start_transaction: { connect: { tx_id: startTxId } },
-        from_chain_rel: { connect: { chain_id: fromChain } },
-        to_chain_rel: { connect: { chain_id: toChain } },
-        message: messageId ? { connect: { message_id: messageId } } : undefined
-      })
-    }`);
+    this.logger.debug(`Storing operation of type ${operationType}`);
 
     try {
       const operationData: Prisma.OperationCreateInput = {
@@ -212,7 +197,7 @@ export class StorageService {
       };
 
       const operation = await this.operationRepository.create(operationData);
-      this.logger.log(`Stored operation ${operation.op_id}`);
+      this.logger.log(`Stored operation ${operation.op_id}, operation data: ${JSON.stringify(operation)}`);
       return operation;
 
     } catch (error) {
@@ -286,7 +271,6 @@ export class StorageService {
           messageId: messageEventParams?.messageId,
           data: messageEventParams?.data
         }
-        this.logger.log(`Sending message to relayer: ${JSON.stringify(sendMessagePayload)}`);
         await this.callRelayerAPI(sendMessagePayload, parseInt(messageEventParams?.toChain));
       }
 
@@ -350,16 +334,22 @@ export class StorageService {
     this.logger.debug(`Searching for operation with transaction hash ${txHash}`);
     
     try {
-      // Find operation_id by joining with transactions using start_tx_id
-      const operation = await this.operationRepository.findByStartTransactionHash(txHash);
-      
+
+      let operation = await this.operationRepository.findByStartTransactionHash(txHash);
       if (operation) {
         this.logger.debug(`Found operation ${operation.op_id} for transaction ${txHash}`);
-      } else {
-        this.logger.debug(`No operation found for transaction ${txHash}`);
+        return operation;
       }
-      
-      return operation;
+
+      this.logger.debug(`No operation found for transaction ${txHash}, trying with end transaction hash`);
+      operation = await this.operationRepository.findByEndTransactionHash(txHash);
+      if (operation) {
+        this.logger.debug(`Found operation ${operation.op_id} for transaction ${txHash}`);
+        return operation;
+      }
+
+      this.logger.debug(`No operation found for transaction ${txHash}`);
+      return operation || null;
     } catch (error) {
       this.logger.error(`Failed to find operation by transaction hash ${txHash}: ${error.message}`);
       return null;
@@ -377,7 +367,7 @@ export class StorageService {
         headers: {
           'Content-Type': 'application/json',
         },
-        timeout: 90000, // 90 second timeout
+        timeout: 90000,
       });
       
       this.logger.log(`Relayer API call successful: ${response.status} - ${response.data?.transactionHash || 'No transaction hash'}`);
@@ -446,29 +436,9 @@ export class StorageService {
 
   private async handleOperationCompletedEvent(event: Event): Promise<void> {
     this.logger.log(`Handle Operation completion event: ${JSON.stringify(event)}`);
-    const params = JSON.parse(event.params as any);
-    this.logger.log(`Params: ${JSON.stringify(params)}`);
-    if (params && params.operationId) {
-      const success = this.parseSuccessStatus(params.success);
-      const transaction = await this.transactionRepository.findByHash(event.chain_id, event.tx_hash);
-      // update operation with status, end_transaction, last_event_at, details
-
-      // const operation = await this.operationRepository.update(params.operationId, {
-      //   status: success ? OperationStatus.completed : OperationStatus.rejected,
-      //   end_transaction: { connect: { tx_id: transaction.tx_id } },
-      //   last_event_at: new Date(),
-      //   details: {
-      //     completionEvent: event.name,
-      //     success: success,
-      //     completionTxHash: event.tx_hash
-      //   }
-      // });
-
-      // await this.eventRepository.updateOperationId(event.event_id, operation.op_id);
-    }
+    // this is handled by the consolidateOperation job
   }
 
-  //{"event_id":"14e750c1-3954-42b2-b725-9c6f7765e9a3","chain_id":11155111,"tx_hash":"0x03a83ea2a5d66807c6ce4da026d500509c771b5e7040044c3543874cc2917994","log_index":15,"name":"MessageSent","contract_address":"0xdea7093551794756a36f85eacd0bb24c24f0dade","params":"{\"nonce\":\"13\",\"sender\":\"0x3c56Ab0a27aaA7E6D11a8f439D79750F1098e15D\",\"fromChain\":\"11155111\",\"toChain\":\"1\",\"messageId\":\"0xaa12effa1156912eb5593464a7f7eb5dd6a6c3c04f892ba7bb2c06ceb46e15e1\",\"data\":\"0x000000000000000000000000000000000000000000000000000000000000000000000000000000000000000028766d88c4b61bc58ae012b12aaf9fa2197df35e000000000000000000000000d74959d45ca2b137e9e453aca1b15fd89029566d0000000000000000000000000000000000000000000000000000000000002710000000000000000000000000000000000000000000000000000000000000000e\",\"timestamp\":\"1755484836\"}","correlation_window_id":null,"buffer_status":"buffered","operation_id":null}
 
   private async handleMessageSentEvent(event: Event): Promise<void> {
     this.logger.log(`Handle Message sent event: ${JSON.stringify(event)}`);
@@ -482,28 +452,7 @@ export class StorageService {
           parseInt(params.toChain) || event.chain_id,
           transaction.tx_id
         );
-        // if(event.operation_id) {
-        //   console.log('event.operation_id', event.operation_id);
-        // // update operation with message_nonce, message, last_event_at, details
-        // await this.operationRepository.update(event.operation_id, {
-        //   message_nonce: parseInt(params.nonce),
-        //   message: { connect: { message_id: message.message_id } },
-        //   last_event_at: new Date(),
-        //   details: {
-        //     messageSentEvent: event.name,
-        //     messageSentTxHash: event.tx_hash
-        //   }
-        // });
-        // console.log('message stored at handleMessageSentEvent', message);
-        // await this.operationRepository.update(message.message_id, {
-        //   message_nonce: parseInt(params.nonce),
-        //   message: { connect: { message_id: message.message_id } },
-        //   last_event_at: new Date(),
-        //   details: {
-        //     messageSentEvent: event.name,
-        //     messageSentTxHash: event.tx_hash
-        //   }
-        // });
+        this.logger.log(`Stored message ${message.message_id} for event ${event.event_id}`);
       }
     }
   }
@@ -518,41 +467,20 @@ export class StorageService {
         parseInt(params.fromChain) || event.chain_id,
         parseInt(params.toChain) || event.chain_id
       );
-      console.log('message received', message);
       
       if (message) {
         await this.updateMessageReceived(message.message_id, event.tx_hash, event.chain_id);
-        // await this.eventRepository.updateOperationId(event.event_id, operation.op_id);
-        // // Consolidate operation: update with message nonce, message_id and status
         await this.consolidateOperationFromMessage(message, event);
+        this.logger.log(`Message ${message.message_id} received and operation consolidated for event ${event.event_id}`);
       }
     }
   }
 
   private async handleLendingEvent(event: Event): Promise<void> {
-    this.logger.debug(`Processed lending event: ${event.name}`);
-    console.log('handleLendingEvent', event);
-    // const params = JSON.parse(event.params as any);
-    // // update operation with 
-    // if (params) {
-    //   const operationType = this.parseOperationType(params.operationType || '0');
-    //   const userAddress = params.user || params.userAddress;
-    //   const transaction = await this.transactionRepository.findByHash(event.chain_id, event.tx_hash);
-    //   if (transaction) {
-    //     const operation = await this.storeOperation(
-    //       operationType,
-    //       userAddress,
-    //       Number(params.fromChain) || event.chain_id,
-    //       Number(params.toChain) || event.chain_id,
-    //       transaction.tx_id
-    //     );
-        
-    //     await this.eventRepository.updateOperationId(event.event_id, operation.op_id);
-    //   }
-    // }
+    this.logger.debug(`Processed lending event: ${event.name}, event data: ${JSON.stringify(event)}`);
+    // this is handled by the consolidateOperation job
   }
 
-  // Helper methods for parsing event data
   private parseOperationType(operationType: string | number): OperationType {
     const type = typeof operationType === 'string' ? parseInt(operationType) : operationType;
     switch (type) {
@@ -584,14 +512,20 @@ export class StorageService {
   }
   
   private async consolidateOperationFromMessage(message: Message, event: Event): Promise<void> {
-    this.logger.debug(`Consolidating operation from message ${message.message_id}, event ${event.event_id}, event data ${JSON.stringify(event)}`);
-    
+    this.logger.debug(`Consolidating operation from message ${message.message_id}, 
+      message data ${JSON.stringify(message)},
+      event ${event.event_id}, 
+      event data ${JSON.stringify(event)}`);
     try {
-      if (event.operation_id) {
-        const updatedOperation = await this.operationRepository.update(event.operation_id, {
-          message_nonce: message.nonce,
-          message: { connect: { message_id: message.message_id } },
-          end_transaction: { connect: { tx_id: event.tx_hash } },
+
+      const transaction = await this.transactionRepository.findByHash(event.chain_id, event.tx_hash);
+      const operation = await this.operationRepository.findByMessageId(message.message_id);
+
+      if(operation) {
+        const updatedOperation = await this.operationRepository.update(operation.op_id, {
+          // message_nonce: message.nonce,
+          // message: { connect: { message_id: message.message_id } },
+          end_transaction: { connect: { tx_id: transaction.tx_id } },
           status: OperationStatus.completed,
           last_event_at: new Date(),
           details: {
@@ -601,37 +535,12 @@ export class StorageService {
             consolidatedAt: new Date().toISOString()
           }
         });
-        
         this.logger.log(`Consolidated operation ${event.operation_id} with message ${message.message_id} and nonce ${message.nonce}`);
         return;
       }
-      
-      // If event is not linked to an operation, try to find operation by transaction hash
-      this.logger.debug(`Finding operation by transaction hash ${event.tx_hash}`);
-      const operation = await this.operationRepository.findByStartTransactionHash(event.tx_hash);
-      console.log('operation', operation);
-      
-      if (operation) {
-        const updatedOperation = await this.operationRepository.update(operation.op_id, {
-          message_nonce: message.nonce,
-          message: { connect: { message_id: message.message_id } },
-          end_transaction: { connect: { tx_id: event.tx_hash } },
-          status: OperationStatus.completed,
-          last_event_at: new Date(),
-          details: {
-            messageReceivedEvent: event.name,
-            messageReceivedTxHash: event.tx_hash,
-            consolidatedAt: new Date().toISOString()
-          }
-        });
-        
-        await this.eventRepository.updateOperationId(event.event_id, operation.op_id);
-        
-        this.logger.log(`Consolidated operation ${operation.op_id} with message ${message.message_id} and nonce ${message.nonce}`);
-        return;
-      }
-      
-      // TODO: If no operation found by start transaction, try to find by user address and operation type (?)
+      // TODO: If no operation found by start transaction, 
+      // try to find by user address and operation type (?)
+      // for the moment it does not happen
       this.logger.warn(`No operation found for message ${message.message_id} and event ${event.event_id}`);
       
     } catch (error) {

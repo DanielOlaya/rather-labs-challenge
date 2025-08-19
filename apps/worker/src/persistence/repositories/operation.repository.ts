@@ -3,30 +3,6 @@ import { PrismaService } from '../prisma.service';
 import { Operation, OperationType, OperationStatus, Prisma } from 'prisma';
 import { OperationWithRelations, OperationFilters, PaginationOptions } from 'shared-types';
 
-// Define a local type that matches exactly what Prisma returns
-// type OperationWithRelationsLocal = Prisma.OperationGetPayload<{
-//   include: {
-//     from_chain_rel: true;
-//     to_chain_rel: true;
-//     start_transaction: {
-//       include: {
-//         chain: true;
-//       };
-//     };
-//     end_transaction: {
-//       include: {
-//         chain: true;
-//       };
-//     };
-//     message: {
-//       include: {
-//         sent_transaction: true;
-//         recv_transaction: true;
-//       };
-//     };
-//   };
-// }>;
-
 @Injectable()
 export class OperationRepository {
   constructor(private prisma: PrismaService) {}
@@ -142,7 +118,6 @@ export class OperationRepository {
   }
 
   async update(opId: string, data: Prisma.OperationUpdateInput): Promise<Operation> {
-    console.log('update operation', opId, data);
     return this.prisma.operation.update({
       where: { op_id: opId },
       data: {
@@ -255,6 +230,29 @@ export class OperationRepository {
       },
       select: {
         op_id: true,
+      },
+    });
+  }
+
+  async findByEndTransactionHash(txHash: string): Promise<{ op_id: string } | null> {
+    return this.prisma.operation.findFirst({
+      where: {
+        end_transaction: {
+          hash: txHash.toLowerCase(),
+        },
+      },
+      select: {
+        op_id: true,
+      },
+    });
+  }
+  
+  async findByMessageId(messageId: string): Promise<{ op_id: string } | null> {
+    return this.prisma.operation.findFirst({
+      where: {
+        message: {
+          message_id: messageId,
+        },
       },
     });
   }

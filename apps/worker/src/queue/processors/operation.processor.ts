@@ -18,14 +18,12 @@ export class OperationConsolidateProcessor extends WorkerHost {
 
   async process(job: Job<ConsolidateOperationJob>): Promise<void> {
     const { data } = job;
-    this.logger.debug(`Processing consolidate operation job for operation ${data.operationId}`);
-    console.log('data', JSON.stringify(data));
+    this.logger.debug(`Processing consolidate operation job for operation ${data.operationId}, data: ${JSON.stringify(data)}`);
 
     try {
       // Consolidate the operation - update status and finalize
       const operation = await this.storageService.consolidateOperation(data);
 
-      // Perform any additional consolidation logic
       await this.performAdditionalConsolidation(data, operation);
 
       this.logger.log(`Successfully consolidated operation ${data.operationId} with status ${operation.status}`);
@@ -40,25 +38,18 @@ export class OperationConsolidateProcessor extends WorkerHost {
     data: ConsolidateOperationJob, 
     operation: any
   ): Promise<void> {
-    // Additional consolidation logic such as:
-    // - Updating related messages
-    // - Notifying other systems
+    // TODO:Additional consolidation logic such as:
     // - Calculating final confidence scores
     // - Cleaning up temporary data
     
     this.logger.debug(`Performing additional consolidation for operation ${data.operationId}`);
     
-    // Example: Update any pending messages related to this operation
-    // (Note: completedTxHash field doesn't exist in ConsolidateOperationJob interface)
     if (data.triggerEvent?.includes('Completed')) {
-      // Link the completion event to the operation
       this.logger.debug(`Processing completion trigger: ${data.triggerEvent}`);
     }
 
-    // Example: Trigger any post-completion workflows
     if (operation.status === 'completed') {
       this.logger.debug(`Operation ${data.operationId} completed successfully`);
-      // Could trigger notifications, webhooks, etc.
     }
   }
 
@@ -100,7 +91,7 @@ export class ReorgRecoveryProcessor extends WorkerHost {
   private async handleReorganization(data: ReorgRecoveryJob): Promise<void> {
     this.logger.warn(`Handling reorganization for chain ${data.chainId} starting from block ${data.blockNumber}`);
 
-    // Reorganization recovery logic:
+    // TODO: Reorganization recovery logic:
     // 1. Mark affected transactions as potentially invalid
     // 2. Re-index blocks from the reorganization point
     // 3. Update event statuses
@@ -108,13 +99,10 @@ export class ReorgRecoveryProcessor extends WorkerHost {
     // 5. Retry failed correlations
 
     try {
-      // Step 1: Find and mark affected data
       await this.markAffectedData(data);
 
-      // Step 2: Trigger re-indexing
       await this.triggerReindexing(data);
 
-      // Step 3: Recalculate correlations
       await this.recalculateCorrelations(data);
 
     } catch (error) {
@@ -126,7 +114,7 @@ export class ReorgRecoveryProcessor extends WorkerHost {
   private async markAffectedData(data: ReorgRecoveryJob): Promise<void> {
     this.logger.debug(`Marking affected data for chain ${data.chainId} from block ${data.blockNumber}`);
     
-    // In a real implementation, this would:
+    // TODO:
     // - Query for all transactions/events at or after the reorg block
     // - Mark them with a special status indicating they need re-validation
     // - Update operation confidence scores that depended on these events
@@ -135,7 +123,7 @@ export class ReorgRecoveryProcessor extends WorkerHost {
   private async triggerReindexing(data: ReorgRecoveryJob): Promise<void> {
     this.logger.debug(`Triggering re-indexing for chain ${data.chainId} from block ${data.blockNumber}`);
     
-    // In a real implementation, this would:
+    // TODO:
     // - Signal the indexer to re-process blocks from the reorg point
     // - Queue new raw event jobs for re-discovered events
     // - Remove events that are no longer present in the canonical chain
@@ -144,7 +132,7 @@ export class ReorgRecoveryProcessor extends WorkerHost {
   private async recalculateCorrelations(data: ReorgRecoveryJob): Promise<void> {
     this.logger.debug(`Recalculating correlations for chain ${data.chainId} affected by reorg`);
     
-    // In a real implementation, this would:
+    // TODO:
     // - Find operations that had events from the affected blocks
     // - Re-run correlation algorithms with updated event data
     // - Update confidence scores based on new chain state

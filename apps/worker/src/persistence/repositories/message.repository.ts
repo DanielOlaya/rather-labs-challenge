@@ -89,7 +89,7 @@ export class MessageRepository {
     return this.prisma.message.findMany({
       where: {
         to_chain: chainId,
-        status: MessageStatus.delivered, // Using correct enum value
+        status: MessageStatus.delivered,
         received_at: {
           gte: cutoffTime,
         },
@@ -134,13 +134,4 @@ export class MessageRepository {
     });
   }
 
-  async linkMessages(sentMessageId: string, receivedMessageId: string): Promise<void> {
-    // Update the received message to reference the sent message
-    await this.prisma.message.update({
-      where: { message_id: receivedMessageId },
-      data: {
-        // Note: You might need to add sent_message_id field to schema for linking
-      },
-    });
-  }
 }

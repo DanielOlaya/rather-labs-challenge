@@ -15,7 +15,7 @@ export class TransactionRepository {
   async findByHash(chainId: number, hash: string): Promise<Transaction | null> {
     return this.prisma.transaction.findFirst({
       where: {
-        chain_id: chainId,
+        // chain_id: chainId,
         hash: {
           equals: hash,
           mode: 'insensitive',

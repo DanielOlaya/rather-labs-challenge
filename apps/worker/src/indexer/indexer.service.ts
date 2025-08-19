@@ -76,7 +76,6 @@ export class IndexerService implements OnModuleInit {
   private async performInitialCatchUp() {
     const chainIds = this.chainProviderService.getAllChainIds();
     
-    // Perform catch-up in parallel for better performance
     await Promise.all(
       chainIds.map(async (chainId) => {
         try {
@@ -163,7 +162,6 @@ export class IndexerService implements OnModuleInit {
       this.isIndexing.add(chainId);
       
       if (fromBlock !== undefined) {
-        // Reset the last processed block
         await this.chainRepository.updateLastBlockProcessed(chainId, fromBlock - 1n);
       }
       

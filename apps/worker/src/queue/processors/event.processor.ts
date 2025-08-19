@@ -35,15 +35,10 @@ export class RawEventProcessor extends WorkerHost {
       const bufferEventJob: BufferEventJob = {
         eventId: event.event_id,
         chainId: data.chainId,
-        bufferExpiresAt: new Date(Date.now() + 30000)
-        // eventName: data.eventName,
-        // txHash: data.txHash,
-        // timestamp: data.timestamp,
-        // contractAddress: data.contractAddress,
-        // blockNumber: data.blockNumber,
+        bufferExpiresAt: new Date(Date.now() + 20000)
       };
 
-      await this.queueService.addBufferEventJob(bufferEventJob, 30000); // 30 second delay
+      await this.queueService.addBufferEventJob(bufferEventJob, 20000); // 30 second delay
 
       this.logger.log(`Successfully processed raw event job for tx ${data.txHash}`);
 
@@ -80,13 +75,8 @@ export class BufferEventProcessor extends WorkerHost {
     this.logger.debug(`Processing buffer event job for event ${data.eventId}`);
 
     try {
+
       const event = await this.storageService.processBufferedEvent(data);
-
-      ///--------------------------------
-      // Parse and store structured event data
-      // await this.storageService.parseAndStoreEventData(event);
-      ///--------------------------------
-
       if (this.isOperationEvent(event.name)) {
         const linkEventJob: LinkEventJob = {
           eventId: data.eventId,
