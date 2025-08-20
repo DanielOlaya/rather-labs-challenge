@@ -193,7 +193,31 @@ rather-labs-challenge/
 - PostgreSQL 14+
 - Redis 6+
 
-### Installation
+### Quick Start (Recommended)
+Use our automated project runner scripts for the easiest setup:
+
+```bash
+# Make script executable (first time only)
+chmod +x scripts/run-project.sh
+
+# Start everything with one command
+./scripts/run-project.sh
+```
+
+This will automatically:
+- ✅ Check all prerequisites
+- 🔧 Create environment files
+- 📦 Install all dependencies
+- 🗄️ Setup database and run migrations
+- 🚀 Start all services (API, Worker, Web, PostgreSQL, Redis)
+
+For Windows users, use `scripts\run-project.bat` instead.
+
+See `scripts/README.md` for detailed usage instructions.
+
+### Manual Installation
+If you prefer to set up manually:
+
 1. Clone the repository
 2. Install dependencies: `pnpm install`
 3. Set up environment variables
@@ -202,6 +226,7 @@ rather-labs-challenge/
 6. Deploy smart contracts
 7. Start the worker: `pnpm run start:worker`
 8. Start the API: `pnpm run start:api`
+9. Start the frontend: `pnpm run dev`
 
 ### Configuration
 - Configure chain RPC URLs in the database

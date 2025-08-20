@@ -85,6 +85,6 @@ export class ConfigService {
   }
 
   get routerAddress(): string {
-    return this.nestConfigService.get<string>('ROUTER_ADDRESS', '0xdea7093551794756A36f85EacD0Bb24c24F0daDe');
+    return this.nestConfigService.get<string>('ROUTER_ADDRESS', '0x18326944A2a6701C7b1c6C3976E012cCee65A4bF');
   }
 }

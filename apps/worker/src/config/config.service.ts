@@ -21,7 +21,7 @@ export class ConfigService {
   }
 
   get redisUrl(): string {
-    return this.nestConfigService.get<string>('REDIS_URL', 'redis://localhost:6379');
+    return this.nestConfigService.get<string>('REDIS_URL', 'redis://redis:6379');
   }
 
   get chainsConfig(): Record<number, ChainConfig> {

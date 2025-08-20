@@ -66,7 +66,8 @@ export function TradingPanel({ onTransaction }: TradingPanelProps) {
       const selectedToken = tokens[selectedAsset];
       
       // Convert amount to proper decimal format (multiply by 10^decimals)
-      const amountInWei = (parseFloat(amount) * Math.pow(10, selectedToken.decimals)).toString();
+      // const amountInWei = (parseFloat(amount) * Math.pow(10, selectedToken.decimals)).toString();
+      const amountInWei = (parseFloat(amount)).toString();
       
       console.log('Contract call details:', {
         contract: controller.contract,

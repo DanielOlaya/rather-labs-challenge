@@ -4,10 +4,12 @@ services:
   postgres:
     image: postgres:15-alpine
     container_name: crosschain-postgres
+    env_file:
+      - ./apps/api/.env
     environment:
-      POSTGRES_DB: crosschain_ops
-      POSTGRES_USER: postgres
-      POSTGRES_PASSWORD: password123
+      POSTGRES_DB: ${POSTGRES_DB:-crosschain_ops}
+      POSTGRES_USER: ${POSTGRES_USER:-postgres}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-password123}
     ports:
       - "5432:5432"
     volumes:
@@ -37,15 +39,22 @@ services:
       dockerfile: apps/api/Dockerfile
     container_name: crosschain-api
     ports:
-      - "3000:3000"
+      - "${API_PORT:-3000}:3000"
+    env_file:
+      - ./apps/api/.env
     environment:
-      NODE_ENV: development
-      DATABASE_URL: postgresql://postgres:password123@postgres:5432/crosschain_ops
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password123}@postgres:5432/${POSTGRES_DB:-crosschain_ops}
       REDIS_URL: redis://redis:6379
-      PORT: 3000
-      CORS_ORIGINS: http://localhost:3001
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      PORT: ${PORT:-3000}
+      CORS_ORIGINS: ${CORS_ORIGINS:-http://localhost:3001,http://localhost:3000}
       CHAINS_CONFIG_PATH: /app/config/chains.json
       CONTRACTS_CONFIG_PATH: /app/config/contracts.json
+      RELAYER_PRIVATE_KEY: ${RELAYER_PRIVATE_KEY}
+      ROUTER_ADDRESS: ${ROUTER_ADDRESS}
+      RATE_LIMIT_TTL: ${RATE_LIMIT_TTL:-60}
+      RATE_LIMIT_MAX: ${RATE_LIMIT_MAX:-100}
     depends_on:
       postgres:
         condition: service_healthy
@@ -53,6 +62,58 @@ services:
         condition: service_healthy
     volumes:
       - ./config:/app/config:ro
+    restart: unless-stopped
+
+  worker:
+    build:
+      context: .
+      dockerfile: apps/worker/Dockerfile
+    container_name: crosschain-worker
+    env_file:
+      - ./apps/worker/.env
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      DATABASE_URL: postgresql://${POSTGRES_USER:-postgres}:${POSTGRES_PASSWORD:-password123}@postgres:5432/${POSTGRES_DB:-crosschain_ops}
+      REDIS_URL: redis://redis:6379
+      REDIS_PORT: ${REDIS_PORT:-6379}
+      CHAINS_CONFIG_PATH: /app/config/chains.json
+      CONTRACTS_CONFIG_PATH: /app/config/contracts.json
+      API_URL: ${API_URL:-http://localhost:3000}
+      INDEXER_BLOCKS_BEHIND: ${INDEXER_BLOCKS_BEHIND:-6}
+      INDEXER_BATCH_SIZE: ${INDEXER_BATCH_SIZE:-100}
+      INDEXER_MAX_RETRIES: ${INDEXER_MAX_RETRIES:-3}
+      INDEXER_RETRY_DELAY: ${INDEXER_RETRY_DELAY:-5000}
+      WEBSOCKET_TIMEOUT: ${WEBSOCKET_TIMEOUT:-30000}
+      CORRELATION_BUFFER_WINDOW_MS: ${CORRELATION_BUFFER_WINDOW_MS:-30000}
+      CORRELATION_MAX_RETRIES: ${CORRELATION_MAX_RETRIES:-3}
+      CORRELATION_TEMPORAL_WINDOW_MINUTES: ${CORRELATION_TEMPORAL_WINDOW_MINUTES:-10}
+      CORRELATION_BLOCK_PROXIMITY_THRESHOLD: ${CORRELATION_BLOCK_PROXIMITY_THRESHOLD:-100}
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+    volumes:
+      - ./config:/app/config:ro
+    restart: unless-stopped
+
+  web:
+    build:
+      context: .
+      dockerfile: apps/web/Dockerfile
+    container_name: crosschain-web
+    ports:
+      - "${WEB_PORT:-3001}:3000"
+    env_file:
+      - ./apps/web/.env.local
+    environment:
+      NODE_ENV: ${NODE_ENV:-development}
+      NEXT_PUBLIC_API_URL: ${NEXT_PUBLIC_API_URL:-http://localhost:3000/api}
+      NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: ${NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID:-your-walletconnect-project-id}
+      NEXT_PUBLIC_NETWORK_ID: ${NEXT_PUBLIC_NETWORK_ID:-11155111}
+      NEXT_PUBLIC_CHAIN_NAME: ${NEXT_PUBLIC_CHAIN_NAME:-Sepolia}
+    depends_on:
+      - api
     restart: unless-stopped
 
 volumes:

@@ -53,19 +53,19 @@ class ApiClient {
     }
 
     const query = searchParams.toString() ? `?${searchParams.toString()}` : '';
-    return this.request(`/operations${query}`);
+    return this.request<{ operations: any[] }>(`/operations${query}`);
   }
 
   async getOperation(id: string) {
-    return this.request(`/operations/${id}`);
+    return this.request<any>(`/operations/${id}`);
   }
 
   async getHealth() {
-    return this.request('/health');
+    return this.request<any>('/health');
   }
 
   async getChainsHealth() {
-    return this.request('/health/chains');
+    return this.request<any>('/health/chains');
   }
 
   // Server-Sent Events for real-time updates

@@ -7,8 +7,8 @@ pragma solidity ^0.8.19;
  */
 interface IController {
     function addCollateral(address token, uint256 amount, uint256 fromChain, uint256 toChain, uint256 status) external;
-    function borrow(address token, uint256 amount, uint256 collateralAmount, uint256 status) external;
-    function withdraw(address token, uint256 amount, uint256 status) external;
+    function borrow(address token, uint256 amount, uint256 collateralAmount, uint256 fromChain, uint256 toChain, uint256 status) external;
+    function withdraw(address token, uint256 amount, uint256 fromChain, uint256 toChain, uint256 status) external;
 }
 
 /**
@@ -145,9 +145,9 @@ contract Router {
             if (operationType == ADD_COLLATERAL) {
                 IController(controllerContract).addCollateral(token, amount, block.chainid, block.chainid, 1);
             } else if (operationType == BORROW) {
-                IController(controllerContract).borrow(token, amount, amount, 1); // Using amount as collateral for simplicity
+                IController(controllerContract).borrow(token, amount, amount, block.chainid, block.chainid, 1);
             } else if (operationType == WITHDRAW) {
-                IController(controllerContract).withdraw(token, amount, 1);
+                IController(controllerContract).withdraw(token, amount, block.chainid, block.chainid, 1);
             }
         }
     }

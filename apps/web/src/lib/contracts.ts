@@ -3,7 +3,7 @@
 export const CONTRACT_ADDRESSES = {
   11155111: { // Sepolia
     controller: '0x3c56Ab0a27aaA7E6D11a8f439D79750F1098e15D',
-    router: '0xdea7093551794756A36f85EacD0Bb24c24F0daDe'
+    router: '0x18326944A2a6701C7b1c6C3976E012cCee65A4bF'
   },
   // Add other chains as they get deployed
 };

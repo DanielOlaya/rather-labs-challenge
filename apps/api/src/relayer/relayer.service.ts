@@ -25,6 +25,13 @@ export class RelayerService {
       
       // TODO: remove this for real crosschain relaying lol
       targetChainId = 11155111;
+
+      const coder = AbiCoder.defaultAbiCoder();
+      const [opType, user, token, amount, operationId] = coder.decode(
+        ["uint8","address","address","uint256","uint256"],
+        message.data
+      );
+      console.log({ opType, user, token, amount: amount.toString(), operationId: operationId.toString() });
       
       const chainsConfig = this.configService.chainsConfig;
       const targetChain = chainsConfig[targetChainId];

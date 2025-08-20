@@ -15,16 +15,16 @@ WORKDIR /app
 # Copy package files
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/ ./packages/
-COPY apps/api/package.json ./apps/api/
+COPY apps/worker/package.json ./apps/worker/
 
 # Install dependencies
 RUN pnpm install --frozen-lockfile
 
 # Copy source code
-COPY apps/api/ ./apps/api/
+COPY apps/worker/ ./apps/worker/
 
 # Build the application
-WORKDIR /app/apps/api
+WORKDIR /app/apps/worker
 RUN pnpm build
 
 # Production stage
@@ -44,18 +44,16 @@ WORKDIR /app
 # Copy package files and install production dependencies
 COPY package.json pnpm-lock.yaml pnpm-workspace.yaml ./
 COPY packages/ ./packages/
-COPY apps/api/package.json ./apps/api/
+COPY apps/worker/package.json ./apps/worker/
 
 RUN pnpm install --frozen-lockfile --prod
 
 # Copy built application
-COPY --from=base /app/apps/api/dist ./apps/api/dist
+COPY --from=base /app/apps/worker/dist ./apps/worker/dist
 
 # Create config directory
 RUN mkdir -p /app/config
 
-WORKDIR /app/apps/api
-
-EXPOSE 3000
+WORKDIR /app/apps/worker
 
 CMD ["node", "dist/main"]
