@@ -7,7 +7,8 @@ import {
   BufferEventJob, 
   LinkEventJob, 
   ConsolidateOperationJob, 
-  ReorgRecoveryJob 
+  ReorgRecoveryJob,
+  MonitorIncompleteOperationsJob
 } from 'shared-types';
 
 @Injectable()
@@ -20,6 +21,7 @@ export class QueueService {
     @InjectQueue(QUEUES.EVENT_LINK) private eventLinkQueue: Queue<LinkEventJob>,
     @InjectQueue(QUEUES.OPERATION_CONSOLIDATE) private operationConsolidateQueue: Queue<ConsolidateOperationJob>,
     @InjectQueue(QUEUES.REORG_RECOVERY) private reorgRecoveryQueue: Queue<ReorgRecoveryJob>,
+    @InjectQueue(QUEUES.MONITOR_INCOMPLETE_OPERATIONS) private monitorIncompleteOperationsQueue: Queue<MonitorIncompleteOperationsJob>,
   ) {}
 
   async addRawEventJob(data: RawEventJob, delay?: number): Promise<void> {
@@ -87,6 +89,22 @@ export class QueueService {
     }
   }
 
+  async addMonitorIncompleteOperationsJob(data: MonitorIncompleteOperationsJob, delay?: number): Promise<void> {
+    try {
+      await this.monitorIncompleteOperationsQueue.add('monitor-incomplete-operations', data, {
+        delay,
+        jobId: `monitor-incomplete-ops-${Date.now()}`,
+        repeat: {
+          every: data.checkInterval * 60 * 1000,
+        },
+      });
+      this.logger.debug(`Added monitor incomplete operations job with ${data.checkInterval} minute interval`);
+    } catch (error) {
+      this.logger.error(`Failed to add monitor incomplete operations job: ${error.message}`, error.stack);
+      throw error;
+    }
+  }
+
   async getQueueHealth() {
     const queues = [
       { name: 'event:buffer', queue: this.eventBufferQueue },
@@ -94,6 +112,7 @@ export class QueueService {
       { name: 'event:link', queue: this.eventLinkQueue },
       { name: 'op:consolidate', queue: this.operationConsolidateQueue },
       { name: 'reorg:recovery', queue: this.reorgRecoveryQueue },
+      { name: 'monitor:incomplete:operations', queue: this.monitorIncompleteOperationsQueue },
     ];
 
     const health = {};

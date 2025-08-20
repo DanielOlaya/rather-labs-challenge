@@ -216,3 +216,8 @@ export interface ReorgRecoveryJob {
   affectedBlocks: string[];
   reorgDepth?: number;
 }
+
+export interface MonitorIncompleteOperationsJob {
+  timestamp: Date;
+  checkInterval: number; // in minutes
+}

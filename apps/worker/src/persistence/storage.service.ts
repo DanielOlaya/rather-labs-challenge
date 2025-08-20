@@ -548,4 +548,30 @@ export class StorageService {
       throw error;
     }
   }
+
+  async findIncompleteOperations(): Promise<any[]> {
+    try {
+      const operations = await this.operationRepository.findMany(
+        { status: OperationStatus.ongoing },
+        { limit: 100, cursor: undefined }
+      );
+      
+      return operations.operations;
+    } catch (error) {
+      this.logger.error(`Failed to find incomplete operations: ${error.message}`, error.stack);
+      return [];
+    }
+  }
+
+  async getRouterContractAddress(chainId: number): Promise<string | null> {
+    try {
+      const contracts = await this.contractRepository.findByChain(chainId);
+      const routerContract = contracts.find(contract => contract.type === 'Router');
+      
+      return routerContract ? routerContract.address : null;
+    } catch (error) {
+      this.logger.error(`Failed to get router contract address for chain ${chainId}: ${error.message}`, error.stack);
+      return null;
+    }
+  }
 }

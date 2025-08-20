@@ -5,12 +5,15 @@ import { ConfigService } from '../config/config.service';
 import { QueueService } from './queue.service';
 import { QUEUES } from './queue.constants';
 import { PersistenceModule } from '../persistence/persistence.module';
+import { IndexerModule } from '../indexer/indexer.module';
 import { RawEventProcessor, BufferEventProcessor, LinkEventProcessor } from './processors/event.processor';
 import { OperationConsolidateProcessor, ReorgRecoveryProcessor } from './processors/operation.processor';
+import { MonitorIncompleteOperationsProcessor } from './processors/monitor-incomplete-operations.processor';
 
 @Module({
   imports: [
     PersistenceModule,
+    IndexerModule,
     BullModule.forRootAsync({
       imports: [ConfigModule],
       inject: [ConfigService],
@@ -39,6 +42,7 @@ import { OperationConsolidateProcessor, ReorgRecoveryProcessor } from './process
       { name: QUEUES.EVENT_LINK },
       { name: QUEUES.OPERATION_CONSOLIDATE },
       { name: QUEUES.REORG_RECOVERY },
+      { name: QUEUES.MONITOR_INCOMPLETE_OPERATIONS },
     ),
   ],
   providers: [
@@ -48,6 +52,7 @@ import { OperationConsolidateProcessor, ReorgRecoveryProcessor } from './process
     LinkEventProcessor,
     OperationConsolidateProcessor,
     ReorgRecoveryProcessor,
+    MonitorIncompleteOperationsProcessor,
   ],
   exports: [
     QueueService,

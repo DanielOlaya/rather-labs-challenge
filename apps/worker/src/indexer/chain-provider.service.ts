@@ -184,6 +184,48 @@ export class ChainProviderService implements OnModuleDestroy {
     return this.providers.get(chainId)?.config ?? null;
   }
 
+  getProvider(chainId: number): ChainProvider | null {
+    return this.providers.get(chainId) ?? null;
+  }
+
+  async getRecentRouterTransactions(chainId: number, routerAddress: string): Promise<any[]> {
+    try {
+      const provider = this.getProvider(chainId);
+      if (!provider) {
+        throw new Error(`No provider found for chain ${chainId}`);
+      }
+
+      const latestBlock = await provider.httpClient.getBlockNumber();
+      
+      const fromBlock = latestBlock - BigInt(10000);
+      
+      const logs = await provider.httpClient.getLogs({
+        address: routerAddress as `0x${string}`,
+        fromBlock,
+        toBlock: latestBlock,
+      });
+
+      // Get transaction details for each log
+      const transactions = [];
+      for (const log of logs) {
+        try {
+          const tx = await provider.httpClient.getTransaction({ hash: log.transactionHash });
+          if (tx) {
+            transactions.push(tx);
+          }
+        } catch (error) {
+          this.logger.debug(`Failed to get transaction ${log.transactionHash}: ${error.message}`);
+        }
+      }
+
+      return transactions;
+
+    } catch (error) {
+      this.logger.error(`Failed to get recent router transactions: ${error.message}`, error.stack);
+      return [];
+    }
+  }
+
   getAllChainIds(): number[] {
     return Array.from(this.providers.keys());
   }
