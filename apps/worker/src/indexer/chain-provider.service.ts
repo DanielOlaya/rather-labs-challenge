@@ -197,7 +197,7 @@ export class ChainProviderService implements OnModuleDestroy {
 
       const latestBlock = await provider.httpClient.getBlockNumber();
       
-      const fromBlock = latestBlock - BigInt(10000);
+      const fromBlock = latestBlock - BigInt(100);
       
       const logs = await provider.httpClient.getLogs({
         address: routerAddress as `0x${string}`,
