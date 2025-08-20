@@ -1,37 +1,13 @@
 import { Injectable } from '@nestjs/common';
 import { PrismaService } from '../prisma.service';
 import { Operation, OperationType, OperationStatus, Prisma } from 'prisma';
-import { OperationFilters, PaginationOptions } from 'shared-types';
-
-// Define a local type that matches exactly what Prisma returns
-type OperationWithRelationsLocal = Prisma.OperationGetPayload<{
-  include: {
-    from_chain_rel: true;
-    to_chain_rel: true;
-    start_transaction: {
-      include: {
-        chain: true;
-      };
-    };
-    end_transaction: {
-      include: {
-        chain: true;
-      };
-    };
-    message: {
-      include: {
-        sent_transaction: true;
-        recv_transaction: true;
-      };
-    };
-  };
-}>;
+import { OperationFilters, PaginationOptions, OperationWithRelations } from 'shared-types';
 
 @Injectable()
 export class OperationRepository {
   constructor(private prisma: PrismaService) {}
 
-  async findById(opId: string): Promise<OperationWithRelationsLocal | null> {
+  async findById(opId: string): Promise<OperationWithRelations | null> {
     return this.prisma.operation.findUnique({
       where: { op_id: opId },
       include: {
@@ -40,11 +16,13 @@ export class OperationRepository {
         start_transaction: {
           include: {
             chain: true,
+            events: true,
           },
         },
         end_transaction: {
           include: {
             chain: true,
+            events: true,
           },
         },
         message: {
@@ -60,7 +38,7 @@ export class OperationRepository {
   async findMany(
     filters: OperationFilters,
     pagination: PaginationOptions,
-  ): Promise<{ operations: OperationWithRelationsLocal[]; hasMore: boolean }> {
+  ): Promise<{ operations: OperationWithRelations[]; hasMore: boolean }> {
     const where: Prisma.OperationWhereInput = {};
 
     if (filters.userAddress) {
@@ -100,11 +78,13 @@ export class OperationRepository {
         start_transaction: {
           include: {
             chain: true,
+            events: true,
           },
         },
         end_transaction: {
           include: {
             chain: true,
+            events: true,
           },
         },
         message: {
@@ -204,7 +184,7 @@ export class OperationRepository {
     });
   }
 
-  async findByUserAddress(userAddress: string, limit: number = 50): Promise<OperationWithRelationsLocal[]> {
+  async findByUserAddress(userAddress: string, limit: number = 50): Promise<OperationWithRelations[]> {
     return this.prisma.operation.findMany({
       where: {
         user_address: {
@@ -218,11 +198,13 @@ export class OperationRepository {
         start_transaction: {
           include: {
             chain: true,
+            events: true,
           },
         },
         end_transaction: {
           include: {
             chain: true,
+            events: true,
           },
         },
         message: {

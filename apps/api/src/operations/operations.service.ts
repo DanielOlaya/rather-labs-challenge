@@ -1,32 +1,8 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { OperationRepository } from '../persistence/repositories/operation.repository';
 import { OperationQueryDto } from './dto/operation-query.dto';
-import { OperationFilters, PaginationOptions } from 'shared-types';
+import { OperationFilters, PaginationOptions, OperationWithRelations } from 'shared-types';
 import { Prisma } from 'prisma';
-
-// Define a local type that matches exactly what Prisma returns
-type OperationWithRelationsLocal = Prisma.OperationGetPayload<{
-  include: {
-    from_chain_rel: true;
-    to_chain_rel: true;
-    start_transaction: {
-      include: {
-        chain: true;
-      };
-    };
-    end_transaction: {
-      include: {
-        chain: true;
-      };
-    };
-    message: {
-      include: {
-        sent_transaction: true;
-        recv_transaction: true;
-      };
-    };
-  };
-}>;
 
 @Injectable()
 export class OperationsService {
@@ -106,7 +82,7 @@ export class OperationsService {
     }
   }
 
-  private formatOperation(operation: OperationWithRelationsLocal) {
+  private formatOperation(operation: OperationWithRelations) {
     return {
       id: operation.op_id,
       type: operation.op_type,
@@ -115,11 +91,11 @@ export class OperationsService {
       user: operation.user_address,
       fromChain: {
         id: operation.from_chain,
-        name: operation.from_chain ? operation.from_chain_rel?.name : undefined,
+        name: operation.from_chain_rel?.name,
       },
       toChain: {
         id: operation.to_chain,
-        name: operation.to_chain ? operation.to_chain_rel?.name : undefined,
+        name: operation.to_chain_rel?.name,
       },
       createdAt: operation.created_at,
       updatedAt: operation.updated_at,
@@ -128,44 +104,143 @@ export class OperationsService {
     };
   }
 
-  private formatOperationWithDetails(operation: OperationWithRelationsLocal) {
+  private formatOperationWithDetails(operation: OperationWithRelations) {
     const base = this.formatOperation(operation);
     
     return {
       ...base,
-      details: operation.details,
+      // Core operation details
+      messageNonce: operation.message_nonce ? operation.message_nonce.toString() : null,
+      messageId: operation.message_id,
+      
+      // Detailed status information
+      substatus: operation.substatus,
       retryCount: operation.retry_count,
       nextRetryAt: operation.next_retry_at,
       errorContext: operation.error_context,
+      
+      // Operation details and metadata
+      // details: operation.details,
+      lastEventAt: operation.last_event_at,
+      
+      // Message information (if cross-chain)
       message: operation.message ? {
         id: operation.message.message_id,
         nonce: operation.message.nonce.toString(),
         status: operation.message.status,
+        fromChain: operation.message.from_chain,
+        toChain: operation.message.to_chain,
         sentAt: operation.message.sent_at,
         receivedAt: operation.message.received_at,
+        sentTransaction: operation.message.sent_transaction ? {
+          id: operation.message.sent_transaction.tx_id,
+          hash: operation.message.sent_transaction.hash,
+          blockNumber: operation.message.sent_transaction.block_number.toString(),
+          blockHash: operation.message.sent_transaction.block_hash,
+          timestamp: operation.message.sent_transaction.timestamp,
+          confirmations: operation.message.sent_transaction.confirmations,
+          status: operation.message.sent_transaction.status,
+          chainId: operation.message.sent_transaction.chain_id,
+        } : null,
+        receivedTransaction: operation.message.recv_transaction ? {
+          id: operation.message.recv_transaction.tx_id,
+          hash: operation.message.recv_transaction.hash,
+          blockNumber: operation.message.recv_transaction.block_number.toString(),
+          blockHash: operation.message.recv_transaction.block_hash,
+          timestamp: operation.message.recv_transaction.timestamp,
+          confirmations: operation.message.recv_transaction.confirmations,
+          status: operation.message.recv_transaction.status,
+          chainId: operation.message.recv_transaction.chain_id,
+        } : null,
       } : null,
+      
+      // Transaction details
       transactions: {
         start: operation.start_transaction ? {
           id: operation.start_transaction.tx_id,
           hash: operation.start_transaction.hash,
           blockNumber: operation.start_transaction.block_number.toString(),
+          blockHash: operation.start_transaction.block_hash,
+          timestamp: operation.start_transaction.timestamp,
           confirmations: operation.start_transaction.confirmations,
           status: operation.start_transaction.status,
-          chain: operation.start_transaction?.chain_id,
+          chainId: operation.start_transaction.chain_id,
+          chain: operation.start_transaction.chain ? {
+            id: operation.start_transaction.chain.chain_id,
+            name: operation.start_transaction.chain.name,
+            status: operation.start_transaction.chain.status,
+          } : null,
         } : null,
         end: operation.end_transaction ? {
           id: operation.end_transaction.tx_id,
           hash: operation.end_transaction.hash,
           blockNumber: operation.end_transaction.block_number.toString(),
+          blockHash: operation.end_transaction.block_hash,
+          timestamp: operation.end_transaction.timestamp,
           confirmations: operation.end_transaction.confirmations,
           status: operation.end_transaction.status,
-          chain: operation.end_transaction?.chain_id
+          chainId: operation.end_transaction.chain_id,
+          chain: operation.end_transaction.chain ? {
+            id: operation.end_transaction.chain.chain_id,
+            name: operation.end_transaction.chain.name,
+            status: operation.end_transaction.chain.status,
+          } : null,
         } : null,
+      },
+      
+      // Chain information
+      chains: {
+        from: operation.from_chain_rel ? {
+          id: operation.from_chain_rel.chain_id,
+          name: operation.from_chain_rel.name,
+          status: operation.from_chain_rel.status,
+          lastBlockProcessed: operation.from_chain_rel.last_block_processed.toString(),
+        } : null,
+        to: operation.to_chain_rel ? {
+          id: operation.to_chain_rel.chain_id,
+          name: operation.to_chain_rel.name,
+          status: operation.to_chain_rel.status,
+          lastBlockProcessed: operation.to_chain_rel.last_block_processed.toString(),
+        } : null,
+      },
+      
+      // Events information
+      events: {
+        startTransaction: operation.start_transaction?.events?.map(event => ({
+          id: event.event_id,
+          name: event.name,
+          contractAddress: event.contract_address,
+          logIndex: event.log_index,
+          params: event.params,
+          bufferStatus: event.buffer_status,
+          correlationWindowId: event.correlation_window_id,
+          chainId: event.chain_id,
+          txHash: event.tx_hash,
+        })) || [],
+        endTransaction: operation.end_transaction?.events?.map(event => ({
+          id: event.event_id,
+          name: event.name,
+          contractAddress: event.contract_address,
+          logIndex: event.log_index,
+          params: event.params,
+          bufferStatus: event.buffer_status,
+          correlationWindowId: event.correlation_window_id,
+          chainId: event.chain_id,
+          txHash: event.tx_hash,
+        })) || [],
+      },
+      
+      // Timestamps
+      timestamps: {
+        created: operation.created_at,
+        updated: operation.updated_at,
+        lastEvent: operation.last_event_at,
+        nextRetry: operation.next_retry_at,
       },
     };
   }
 
-  private buildTimeline(operation: OperationWithRelationsLocal) {
+  private buildTimeline(operation: OperationWithRelations) {
     const timeline = [];
 
     // Start transaction
