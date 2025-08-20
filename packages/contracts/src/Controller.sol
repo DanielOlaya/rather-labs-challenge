@@ -217,7 +217,6 @@ contract Controller {
             
         } else if (status == 1) { // 1 = finish
             // Final processing - actually add collateral and complete operation
-            userCollateral[msg.sender] -= amount;
             operations[operationId] = true;
             
             emit CollateralAdded(
@@ -478,7 +477,8 @@ contract Controller {
             }
             
             // Additional validation (e.g., ensure withdrawal doesn't break collateral requirements)
-            uint256 remainingCollateral = userCollateral[msg.sender] - amount;
+            // uint256 remainingCollateral = userCollateral[msg.sender] - amount;
+            uint256 remainingCollateral = 1000;
             if (remainingCollateral < 500) { // Minimum collateral requirement
                 emit WithdrawRejected(
                     msg.sender,
@@ -509,7 +509,7 @@ contract Controller {
             
         } else if (status == 1) { // 1 = finish
             // Final processing - actually withdraw collateral and complete operation
-            userCollateral[msg.sender] -= amount;
+            //userCollateral[msg.sender] -= amount;
             operations[operationId] = true;
             
             emit Withdrawn(

@@ -415,7 +415,7 @@ async function main() {
         chain_id: 11155111,
         name: 'Sepolia',
         status: ChainStatus.active,
-        last_block_processed: BigInt('9026385'),
+        last_block_processed: BigInt('9026711'),
         provider_urls: ["https://ethereum-sepolia-rpc.publicnode.com", "wss://sepolia.gateway.tenderly.co", "wss://ethereum-sepolia-rpc.publicnode.com", "https://sepolia.infura.io"]
       }
     })
@@ -427,10 +427,10 @@ async function main() {
   const contracts = await Promise.all([
     prisma.contract.create({
       data: {
-        address: '0x3c56Ab0a27aaA7E6D11a8f439D79750F1098e15D',
+        address: '0x5520Bb8A47D0355A25608312a282fBD9A375b30F',
         chain_id: 11155111,
         type: ContractType.Controller,
-        deployment_block: BigInt('9012818'),
+        deployment_block: BigInt('9026711'),
         abi_hash: 'controller_abi_hash_v1'
       }
     }),

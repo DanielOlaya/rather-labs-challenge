@@ -2,7 +2,7 @@
 // TODO: get this contracts from the JSON file  
 export const CONTRACT_ADDRESSES = {
   11155111: { // Sepolia
-    controller: '0x3c56Ab0a27aaA7E6D11a8f439D79750F1098e15D',
+    controller: '0x5520Bb8A47D0355A25608312a282fBD9A375b30F',
     router: '0x18326944A2a6701C7b1c6C3976E012cCee65A4bF'
   },
   // Add other chains as they get deployed
