@@ -2,6 +2,22 @@
 
 A sophisticated cross-chain lending protocol built with smart contracts, blockchain event processing, and automated operation consolidation. This system enables users to add collateral, borrow, and withdraw across multiple blockchain networks with seamless cross-chain communication.
 
+## 🌐 Try It Online
+
+**Experience the Cross-Chain Lending Protocol live:** [https://front-rather.vercel.app/](https://front-rather.vercel.app/)
+
+The online version provides a complete Web3 interface where you can:
+- Connect your MetaMask wallet
+- Add collateral, borrow, and withdraw assets across chains
+- Track your cross-chain operations
+- View transaction history and operation status
+
+**💡 Getting Started:**
+1. Install [MetaMask](https://metamask.io/) extension
+2. Switch to Sepolia testnet for testing
+3. Get test ETH from [Sepolia faucet](https://sepoliafaucet.com/)
+4. Connect your wallet and start trading!
+
 ## 🏗️ Architecture
 
 The system consists of four main components:
@@ -118,7 +134,7 @@ The system consists of four main components:
 - **BullMQ**: Robust job queue processing
 
 ### Blockchain
-- **Solidity ^0.8.19**: Smart contract development
+- **Solidity**: Smart contract development
 - **Cross-chain Messaging**: Router-Controller architecture
 - **Event-driven Design**: Comprehensive blockchain event handling
 
