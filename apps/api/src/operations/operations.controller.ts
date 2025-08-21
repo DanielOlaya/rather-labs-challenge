@@ -22,11 +22,6 @@ import {
 } from '@nestjs/swagger';
 import { OperationsService } from './operations.service';
 import { OperationQueryDto, StreamQueryDto } from './dto/operation-query.dto';
-import { 
-  OperationSchema, 
-  OperationWithDetailsSchema, 
-  SuccessResponseSchema 
-} from '../schemas/api-schemas';
 
 @ApiTags('operations')
 @Controller('operations')
@@ -65,21 +60,6 @@ export class OperationsController {
     return this.operationsService.getOperations(query);
   }
 
-  @Get(':id')
-  @ApiOperation({ 
-    summary: 'Get operation by ID',
-    description: 'Retrieve detailed information about a specific cross-chain lending operation'
-  })
-  @ApiParam({ name: 'id', description: 'Operation ID' })
-  @ApiOkResponse({ 
-    description: 'Operation details retrieved successfully',
-    schema: { $ref: '#/components/schemas/OperationWithDetailsSchema' }
-  })
-  @ApiNotFoundResponse({ description: 'Operation not found' })
-  async getOperationById(@Param('id') id: string) {
-    return this.operationsService.getOperationById(id);
-  }
-
   @Sse('stream')
   @ApiOperation({ 
     summary: 'Stream operations updates',
@@ -109,5 +89,20 @@ export class OperationsController {
         },
       })),
     );
+  }
+
+  @Get(':id')
+  @ApiOperation({ 
+    summary: 'Get operation by ID',
+    description: 'Retrieve detailed information about a specific cross-chain lending operation'
+  })
+  @ApiParam({ name: 'id', description: 'Operation ID' })
+  @ApiOkResponse({ 
+    description: 'Operation details retrieved successfully',
+    schema: { $ref: '#/components/schemas/OperationWithDetailsSchema' }
+  })
+  @ApiNotFoundResponse({ description: 'Operation not found' })
+  async getOperationById(@Param('id') id: string) {
+    return this.operationsService.getOperationById(id);
   }
 }
