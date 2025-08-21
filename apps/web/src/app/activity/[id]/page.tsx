@@ -20,61 +20,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 
-interface Transaction {
-  id: string;
-  hash: string;
-  blockNumber: string;
-  blockHash: string;
-  timestamp: string;
-  confirmations: number;
-  status: string;
-  chainId: number;
-  chain?: {
-    id: number;
-    name: string;
-    status: string;
-  };
-}
-
-interface Event {
-  id: string;
-  name: string;
-  contractAddress: string;
-  logIndex: number;
-  params: string;
-  bufferStatus: string;
-  correlationWindowId?: string;
-  chainId: number;
-  txHash: string;
-}
-
-interface ChainInfo {
-  id: number;
-  name: string;
-  status: string;
-  lastBlockProcessed?: string;
-}
-
-interface Message {
-  id: string;
-  nonce: string;
-  status: string;
-  fromChain: number;
-  toChain: number;
-  sentAt: string;
-  receivedAt: string;
-  sentTransaction: Transaction;
-  receivedTransaction: Transaction;
-}
-
-interface OperationEvent {
-  timestamp: string;
-  status: string;
-  description: string;
-  txHash?: string;
-  chainId: number;
-}
-
 interface Operation {
   id: string;
   type: string;
@@ -86,24 +31,118 @@ interface Operation {
   createdAt: string;
   updatedAt: string;
   lastEventAt?: string;
-  timeline: OperationEvent[];
+  timeline: Array<{
+    timestamp: string;
+    status: string;
+    description: string;
+    txHash?: string;
+    chainId: number;
+  }>;
   messageNonce?: string;
   messageId?: string;
   retryCount?: number;
   nextRetryAt?: string | null;
-  errorContext?: any;
-  message?: Message;
+  errorContext?: Record<string, any> | null;
+  message?: {
+    id: string;
+    nonce: string;
+    status: string;
+    fromChain: number;
+    toChain: number;
+    sentAt: string;
+    receivedAt: string;
+    sentTransaction: {
+      id: string;
+      hash: string;
+      blockNumber: string;
+      blockHash: string;
+      timestamp: string;
+      confirmations: number;
+      status: string;
+      chainId: number;
+    };
+    receivedTransaction: {
+      id: string;
+      hash: string;
+      blockNumber: string;
+      blockHash: string;
+      timestamp: string;
+      confirmations: number;
+      status: string;
+      chainId: number;
+    };
+  };
   transactions?: {
-    start?: Transaction;
-    end?: Transaction;
+    start?: {
+      id: string;
+      hash: string;
+      blockNumber: string;
+      blockHash: string;
+      timestamp: string;
+      confirmations: number;
+      status: string;
+      chainId: number;
+      chain?: {
+        id: number;
+        name: string;
+        status: string;
+      };
+    };
+    end?: {
+      id: string;
+      hash: string;
+      blockNumber: string;
+      blockHash: string;
+      timestamp: string;
+      confirmations: number;
+      status: string;
+      chainId: number;
+      chain?: {
+        id: number;
+        name: string;
+        status: string;
+      };
+    };
   };
   chains?: {
-    from: ChainInfo;
-    to: ChainInfo;
+    from: {
+      id: number;
+      name: string;
+      status: string;
+      lastBlockProcessed?: string;
+    };
+    to: {
+      id: number;
+      name: string;
+      status: string;
+      lastBlockProcessed?: string;
+    };
   };
   events?: {
-    startTransaction?: Event[];
-    endTransaction?: Event[];
+    startTransaction?: Array<{
+      id: string;
+      name: string;
+      contractAddress: string;
+      logIndex: number;
+      params: string;
+      bufferStatus: string;
+      correlationWindowId?: string;
+      chainId: number;
+      txHash: string;
+      timestamp?: string;
+    }>;
+    endTransaction?: Array<{
+      id: string;
+      name: string;
+      contractAddress: string;
+      logIndex: number;
+      params: string;
+      bufferStatus: string;
+      correlationWindowId?: string;
+      chainId: number;
+      txHash: string;
+      timestamp?: string;
+    }>;
   };
   timestamps?: {
     created: string;
@@ -434,13 +473,7 @@ export default function OperationDetailPage() {
                         </a>
                       )}
                     </div>
-                    {event.metadata && Object.keys(event.metadata).length > 0 && (
-                      <div className="mt-2 p-2 bg-gray-600 rounded text-xs">
-                        <pre className="text-gray-300 overflow-x-auto">
-                          {JSON.stringify(event.metadata, null, 2)}
-                        </pre>
-                      </div>
-                    )}
+
                   </div>
                 </div>
               ))}
@@ -470,7 +503,7 @@ export default function OperationDetailPage() {
                           {formatAddress(operation.transactions.start.hash)}
                         </code>
                         <Button
-                          onClick={() => copyToClipboard(operation.transactions.start!.hash)}
+                          onClick={() => copyToClipboard(operation.transactions?.start?.hash || '')}
                           variant="ghost"
                           size="sm"
                           className="bg-gray-600 text-gray-400 hover:bg-gray-500 hover:text-white"
@@ -531,7 +564,7 @@ export default function OperationDetailPage() {
                           {formatAddress(operation.transactions.end.hash)}
                         </code>
                         <Button
-                          onClick={() => copyToClipboard(operation.transactions.end!.hash)}
+                          onClick={() => copyToClipboard(operation.transactions?.end?.hash || '')}
                           variant="ghost"
                           size="sm"
                           className="bg-gray-600 text-gray-400 hover:bg-gray-500 hover:text-white"
